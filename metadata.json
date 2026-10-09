@@ -1,0 +1,8 @@
+{
+  "name": "the-fragrance-store",
+  "description": "Imported from GitHub: sohail-24/texs-shop",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
