@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <radialGradient id="sBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1B263B" />
+      <stop offset="60%" stop-color="#0E1624" />
+      <stop offset="100%" stop-color="#05080F" />
+    </radialGradient>
+    <linearGradient id="sGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="25%" stop-color="#1E293B" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="75%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="sCap" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F0F0F" />
+      <stop offset="30%" stop-color="#3A3A3A" />
+      <stop offset="50%" stop-color="#1A1A1A" />
+      <stop offset="70%" stop-color="#4A4A4A" />
+      <stop offset="100%" stop-color="#050505" />
+    </linearGradient>
+    <linearGradient id="sSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#sBg)" />
+
+  <!-- Bottle pedestal reflection -->
+  <ellipse cx="200" cy="335" rx="80" ry="18" fill="#000000" opacity="0.75" />
+  <ellipse cx="200" cy="330" rx="65" ry="10" fill="#38BDF8" opacity="0.15" />
+
+  <!-- Cylindrical Cap with Ribbed Texture -->
+  <rect x="165" y="90" width="70" height="48" rx="4" fill="url(#sCap)" stroke="#334155" stroke-width="1" />
+  <!-- Cap Ribs -->
+  <line x1="172" y1="94" x2="172" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="179" y1="94" x2="179" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="186" y1="94" x2="186" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="193" y1="94" x2="193" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="200" y1="94" x2="200" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="207" y1="94" x2="207" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="214" y1="94" x2="214" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="221" y1="94" x2="221" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <line x1="228" y1="94" x2="228" y2="134" stroke="#52525B" stroke-width="1.5" />
+  <!-- Silver Atomizer Collar -->
+  <rect x="175" y="138" width="50" height="12" rx="2" fill="url(#sSilver)" />
+
+  <!-- Glass Bottle Body -->
+  <rect x="150" y="148" width="100" height="175" rx="14" fill="url(#sGlass)" stroke="#475569" stroke-width="1.5" />
+
+  <!-- Glass Highlight Beams -->
+  <path d="M 158 155 L 166 155 L 166 315 L 158 315 Z" fill="#FFFFFF" opacity="0.18" />
+  <path d="M 234 155 L 242 155 L 242 315 L 234 315 Z" fill="#38BDF8" opacity="0.25" />
+
+  <!-- Lower Midnight Ombre Glow -->
+  <rect x="153" y="270" width="94" height="48" rx="10" fill="#0284C7" opacity="0.2" />
+
+  <!-- Dior Sauvage Typography -->
+  <text x="200" y="222" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="16" font-weight="900" fill="#F8FAFC" letter-spacing="4">SAUVAGE</text>
+  <text x="200" y="242" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="11" font-weight="600" fill="#CBD5E1" letter-spacing="3">EAU DE PARFUM</text>
+  <text x="200" y="272" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="10" font-weight="700" fill="#94A3B8" letter-spacing="2">DIOR</text>
+</svg>

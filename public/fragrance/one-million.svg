@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <radialGradient id="mBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2D1C08" />
+      <stop offset="60%" stop-color="#180E04" />
+      <stop offset="100%" stop-color="#080502" />
+    </radialGradient>
+    <linearGradient id="mGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5D6" />
+      <stop offset="25%" stop-color="#ECC66D" />
+      <stop offset="50%" stop-color="#D4A74F" />
+      <stop offset="80%" stop-color="#A77926" />
+      <stop offset="100%" stop-color="#6A490F" />
+    </linearGradient>
+    <linearGradient id="mFacet" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6A490F" />
+      <stop offset="20%" stop-color="#FFE8A3" />
+      <stop offset="45%" stop-color="#ECC66D" />
+      <stop offset="70%" stop-color="#A77926" />
+      <stop offset="100%" stop-color="#492E05" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#mBg)" />
+
+  <!-- Shadow below gold bar -->
+  <ellipse cx="200" cy="340" rx="75" ry="16" fill="#000000" opacity="0.8" />
+  <ellipse cx="200" cy="336" rx="60" ry="10" fill="#D4A74F" opacity="0.25" />
+
+  <!-- Gold Bullion Ingot Body -->
+  <!-- Top Bevel -->
+  <polygon points="160,85 240,85 248,105 152,105" fill="#FFE8A3" stroke="#D4A74F" stroke-width="1" />
+  <!-- Main Ingot Front Face -->
+  <polygon points="152,105 248,105 242,325 158,325" fill="url(#mFacet)" stroke="#B28432" stroke-width="1.5" />
+  
+  <!-- Left Ingot Chamfer Bevel -->
+  <polygon points="144,110 152,105 158,325 152,322" fill="#8F621C" opacity="0.7" />
+  <!-- Right Ingot Chamfer Bevel -->
+  <polygon points="248,105 256,110 248,322 242,325" fill="#FFE8A3" opacity="0.6" />
+
+  <!-- Spray Slot Recess -->
+  <rect x="186" y="94" width="28" height="8" rx="2" fill="#1C140A" />
+  <circle cx="200" cy="98" r="2" fill="#D4A74F" />
+
+  <!-- Engraved 1 MILLION Typography -->
+  <g transform="translate(200, 200)">
+    <!-- Big Stylized "1" -->
+    <text x="0" y="-10" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="54" font-weight="900" fill="#5A3A0B">1</text>
+    <text x="-1" y="-11" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="54" font-weight="900" fill="#FFF2CE" opacity="0.9">1</text>
+    <text x="0" y="24" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="14" font-weight="900" fill="#5A3A0B" letter-spacing="4">MILLION</text>
+    <text x="0" y="23" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="14" font-weight="900" fill="#FFF2CE" letter-spacing="4">MILLION</text>
+    <text x="0" y="55" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="12" font-style="italic" font-weight="700" fill="#5A3A0B" letter-spacing="2">paco rabanne</text>
+    <text x="0" y="54" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="12" font-style="italic" font-weight="700" fill="#FFE8A3" letter-spacing="2">paco rabanne</text>
+  </g>
+</svg>

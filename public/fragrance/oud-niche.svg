@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="oudBg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#241E15" />
+      <stop offset="50%" stop-color="#14110C" />
+      <stop offset="100%" stop-color="#090806" />
+    </radialGradient>
+    <linearGradient id="goldFiligree" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2DEB6" />
+      <stop offset="50%" stop-color="#C5A059" />
+      <stop offset="100%" stop-color="#806223" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#oudBg)" />
+  <ellipse cx="400" cy="500" rx="180" ry="22" fill="#040302" opacity="0.9" />
+  <ellipse cx="400" cy="495" rx="130" ry="14" fill="#C5A059" opacity="0.15" />
+
+  <!-- Bottle Group -->
+  <g transform="translate(400, 310)">
+    <!-- Flacon Body in Heavy Black Glass -->
+    <path d="M -90 -110 L 90 -110 L 98 120 C 98 132 88 142 76 142 L -76 142 C -88 142 -98 132 -98 120 Z" fill="#131210" stroke="url(#goldFiligree)" stroke-width="2.2" />
+    
+    <!-- Gold Geometric Diamond Inset Pattern -->
+    <g stroke="url(#goldFiligree)" stroke-width="1" fill="none" opacity="0.45">
+      <polygon points="0,-90 60,-30 0,30 -60,-30" />
+      <polygon points="0,-30 60,30 0,90 -60,30" />
+      <line x1="0" y1="-90" x2="0" y2="130" />
+    </g>
+
+    <!-- Center Gold Ingot Label -->
+    <rect x="-65" y="-20" width="130" height="70" rx="3" fill="#1E1A14" stroke="url(#goldFiligree)" stroke-width="1.2" />
+    <text x="0" y="8" text-anchor="middle" font-family="'Cormorant Garamond', serif" font-size="14" letter-spacing="4" fill="#F2DEB6" font-weight="700">ROYAL OUD</text>
+    <line x1="-30" y1="18" x2="30" y2="18" stroke="#C5A059" stroke-width="0.8" />
+    <text x="0" y="30" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" letter-spacing="3" fill="#C5A059">EXTRAIT DE PARFUM</text>
+
+    <!-- Collar -->
+    <rect x="-24" y="-136" width="48" height="26" fill="url(#goldFiligree)" />
+    <!-- Octagonal Gold Dome Cap -->
+    <polygon points="-45,-185 45,-185 55,-136 -55,-136" fill="url(#goldFiligree)" stroke="#523E16" stroke-width="1.5" />
+    <circle cx="0" cy="-185" r="7" fill="#1E1A14" stroke="url(#goldFiligree)" stroke-width="1.5" />
+  </g>
+</svg>

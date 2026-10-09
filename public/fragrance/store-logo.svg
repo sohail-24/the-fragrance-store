@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 110" width="100%" height="100%">
+  <defs>
+    <linearGradient id="crestGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE5B4" />
+      <stop offset="40%" stop-color="#D8B168" />
+      <stop offset="80%" stop-color="#B28A3E" />
+      <stop offset="100%" stop-color="#846022" />
+    </linearGradient>
+    <linearGradient id="textWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E8E8E8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Ornate Crest Shield with KTK Monogram -->
+  <g transform="translate(48, 52)">
+    <!-- Outer Flourishes / Laurels -->
+    <path d="M -36 -2 C -42 -18 -26 -38 -8 -38 C -14 -28 -12 -16 -4 -10 C -12 -8 -24 -2 -22 14 C -22 24 -10 32 0 36 C -18 32 -32 18 -36 -2 Z" fill="url(#crestGold)" opacity="0.85" />
+    <path d="M 36 -2 C 42 -18 26 -38 8 -38 C 14 -28 12 -16 4 -10 C 12 -8 24 -2 22 14 C 22 24 10 32 0 36 C 18 32 32 18 36 -2 Z" fill="url(#crestGold)" opacity="0.85" />
+    <!-- Crown on Top -->
+    <path d="M -16 -34 L -10 -44 L 0 -38 L 10 -44 L 16 -34 C 10 -31 -10 -31 -16 -34 Z" fill="url(#crestGold)" />
+    <circle cx="0" cy="-45" r="2.5" fill="#FCE5B4" />
+    <circle cx="-10" cy="-46" r="2" fill="#FCE5B4" />
+    <circle cx="10" cy="-46" r="2" fill="#FCE5B4" />
+
+    <!-- Central Ornate Shield -->
+    <path d="M 0 -28 C 18 -28 24 -18 24 2 C 24 22 14 34 0 40 C -14 34 -24 22 -24 2 C -24 -18 -18 -28 0 -28 Z" fill="#0A0A0A" stroke="url(#crestGold)" stroke-width="2" />
+    <path d="M 0 -24 C 15 -24 20 -15 20 2 C 20 18 12 28 0 34 C -12 28 -20 18 -20 2 C -20 -15 -15 -24 0 -24 Z" fill="none" stroke="url(#crestGold)" stroke-width="0.8" opacity="0.6" stroke-dasharray="2 3" />
+
+    <!-- KTK Center Monogram -->
+    <text x="0" y="8" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="16" font-weight="700" letter-spacing="2" fill="url(#crestGold)">KTK</text>
+  </g>
+
+  <!-- Typography Right Side: The Fragrance Store -->
+  <!-- "The" in delicate cursive/italic -->
+  <text x="110" y="36" font-family="'Cormorant Garamond', 'Playfair Display', Georgia, serif" font-size="18" font-style="italic" fill="url(#crestGold)" font-weight="500">The</text>
+
+  <!-- "Fragrance" in bold prominent italic -->
+  <text x="135" y="52" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="34" font-weight="900" font-style="italic" fill="url(#textWhite)" letter-spacing="-0.5">Fragrance</text>
+
+  <!-- "Store" in refined italic following Fragrance -->
+  <text x="312" y="52" font-family="'Cormorant Garamond', Georgia, serif" font-size="28" font-style="italic" font-weight="600" fill="#E8E8E8">Store</text>
+
+  <!-- "House of Brands" underneath with subtle gold filigree lines -->
+  <line x1="135" y1="64" x2="160" y2="64" stroke="url(#crestGold)" stroke-width="0.75" opacity="0.7" />
+  <text x="215" y="68" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="600" letter-spacing="4" fill="url(#crestGold)">HOUSE OF BRANDS</text>
+  <line x1="270" y1="64" x2="295" y2="64" stroke="url(#crestGold)" stroke-width="0.75" opacity="0.7" />
+</svg>

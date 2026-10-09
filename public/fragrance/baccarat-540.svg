@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bacBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#381014" />
+      <stop offset="60%" stop-color="#1A0609" />
+      <stop offset="100%" stop-color="#080203" />
+    </radialGradient>
+    <linearGradient id="bacGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEBB8" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#8C6D1F" />
+    </linearGradient>
+    <linearGradient id="bacRedLabel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B91C1C" />
+      <stop offset="100%" stop-color="#7F1D1D" />
+    </linearGradient>
+    <linearGradient id="bacGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D1518" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#1F0E10" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#0A0405" stop-opacity="1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#bacBg)" />
+
+  <!-- Ground Red/Gold Amber Refraction -->
+  <ellipse cx="200" cy="340" rx="80" ry="16" fill="#000000" opacity="0.8" />
+  <ellipse cx="200" cy="336" rx="60" ry="10" fill="#EF4444" opacity="0.3" />
+
+  <!-- Heavy Gold Architectural Cap -->
+  <rect x="170" y="85" width="60" height="50" rx="2" fill="url(#bacGold)" stroke="#B45309" stroke-width="1" />
+  <!-- Cap Grooves -->
+  <line x1="170" y1="105" x2="230" y2="105" stroke="#78350F" stroke-width="1" />
+  <line x1="170" y1="120" x2="230" y2="120" stroke="#78350F" stroke-width="1" />
+
+  <!-- Flacon Collar -->
+  <rect x="180" y="135" width="40" height="8" rx="1" fill="url(#bacGold)" />
+
+  <!-- Flacon Body (Heavy crystal) -->
+  <rect x="145" y="143" width="110" height="180" rx="4" fill="url(#bacGlass)" stroke="#7F1D1D" stroke-width="1.5" />
+
+  <!-- Faceted Crystal Edge Reflections -->
+  <path d="M 152 150 L 158 150 L 158 316 L 152 316 Z" fill="#FCA5A5" opacity="0.2" />
+  <path d="M 242 150 L 248 150 L 248 316 L 242 316 Z" fill="#FDE047" opacity="0.25" />
+
+  <!-- Baccarat Rouge Signature Crimson Plaque -->
+  <rect x="160" y="185" width="80" height="95" rx="2" fill="url(#bacRedLabel)" stroke="url(#bacGold)" stroke-width="1.5" />
+  <rect x="163" y="188" width="74" height="89" rx="1" fill="none" stroke="url(#bacGold)" stroke-width="0.5" opacity="0.6" />
+
+  <!-- Label Typography in Gold -->
+  <g transform="translate(200, 215)">
+    <text x="0" y="0" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="14" font-weight="700" fill="url(#bacGold)" letter-spacing="1">Baccarat</text>
+    <text x="0" y="16" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFF5D6" letter-spacing="2">ROUGE 540</text>
+    <text x="0" y="32" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="9" font-style="italic" fill="url(#bacGold)">EXTRAIT DE PARFUM</text>
+    <text x="0" y="52" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="7.5" font-weight="700" fill="#FFEBB8" letter-spacing="1">Maison Francis Kurkdjian</text>
+  </g>
+</svg>

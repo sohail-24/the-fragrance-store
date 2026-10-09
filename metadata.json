@@ -1,6 +1,6 @@
 {
   "name": "the-fragrance-store",
-  "description": "Imported from GitHub: sohail-24/texs-shop",
+  "description": "The Fragrance Store — House of Brands. Discover Your Signature Scent.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

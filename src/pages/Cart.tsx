@@ -67,7 +67,7 @@ export default function Cart() {
                           <Link to={`/products/${item.productSlug}`} className="font-medium hover:text-primary">{item.productName}</Link>
                           {item.selectedOption ? (
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200/80">
+                              <span className="inline-flex items-center rounded bg-[#111111] px-2 py-0.5 text-xs font-semibold text-[#E0C895] border border-[#C5A059]/40">
                                 {item.selectedOption}
                               </span>
                               <span className="text-xs text-muted-foreground font-medium">
@@ -107,7 +107,7 @@ export default function Cart() {
               <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
               <Separator />
               <SummaryRow label="Total" value={formatCurrency(subtotal)} strong />
-              <Link to="/info"><Button className="h-11 w-full bg-emerald-600 hover:bg-emerald-700">Checkout<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+              <Link to="/info"><Button className="h-11 w-full bg-[#111111] hover:bg-[#C5A059] hover:text-[#111111] text-[#FDFBF7] font-semibold tracking-wider uppercase text-xs transition-colors">Proceed to Checkout<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
               <Link to="/"><Button variant="outline" className="w-full">Continue Shopping</Button></Link>
             </CardContent>
           </Card>

@@ -195,7 +195,7 @@ function AppLayoutContent() {
 
   const company = companyQuery.data ?? null;
   const role = getAppRole(user);
-  const businessName = company?.name ?? "Tex’s Chicken & Burgers";
+  const businessName = company?.name ?? "The Fragrance Store";
   const initials = (user?.name ?? businessName)
     .split(" ")
     .map((part) => part[0])
@@ -219,19 +219,19 @@ function AppLayoutContent() {
       <Sidebar collapsible="icon" className="z-40 border-sidebar-border">
         <SidebarHeader className="h-16 border-b border-sidebar-border px-3">
           <Link to={role === "buyer" ? "/" : "/dashboard"} className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-sidebar-border overflow-hidden shadow-sm p-0.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black border border-[#C5A059]/40 overflow-hidden shadow-sm p-0.5">
               <img
-                src="/branding/logo.png"
-                alt="Tex’s Chicken & Burgers"
+                src="/fragrance/brand-mark.svg"
+                alt="The Fragrance Store"
                 className="h-full w-full object-contain"
               />
             </div>
             {!isCollapsed && (
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-sidebar-foreground">
+                <div className="truncate text-sm font-semibold tracking-wide text-sidebar-foreground">
                   {businessName}
                 </div>
-                <div className="truncate text-[11px] text-sidebar-foreground/60">
+                <div className="truncate text-[11px] text-[#C5A059]">
                   {getRoleLabel(role)}
                 </div>
               </div>

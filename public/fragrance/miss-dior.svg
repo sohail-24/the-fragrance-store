@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <radialGradient id="mdBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#321E23" />
+      <stop offset="60%" stop-color="#1A0D10" />
+      <stop offset="100%" stop-color="#080305" />
+    </radialGradient>
+    <linearGradient id="mdPink" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FCE7F3" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#F472B6" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#DB2777" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="mdSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#mdBg)" />
+
+  <ellipse cx="200" cy="340" rx="75" ry="15" fill="#000000" opacity="0.8" />
+  <ellipse cx="200" cy="336" rx="55" ry="8" fill="#F472B6" opacity="0.25" />
+
+  <!-- Crystal Cube Cap -->
+  <rect x="175" y="85" width="50" height="38" rx="2" fill="#FFFFFF" fill-opacity="0.25" stroke="#E2E8F0" stroke-width="1.2" />
+
+  <!-- Couture Silver/Jacquard Bow -->
+  <g transform="translate(200, 130)">
+    <!-- Bow Loops -->
+    <path d="M 0 0 C -18 -15 -35 -5 -25 8 C -15 12 -5 2 0 0 Z" fill="url(#mdSilver)" stroke="#94A3B8" stroke-width="0.8" />
+    <path d="M 0 0 C 18 -15 35 -5 25 8 C 15 12 5 2 0 0 Z" fill="url(#mdSilver)" stroke="#94A3B8" stroke-width="0.8" />
+    <!-- Center Knot -->
+    <circle cx="0" cy="2" r="5" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1" />
+    <!-- Bow Tails -->
+    <path d="M -4 6 L -16 22 L -8 20 L 0 8 Z" fill="url(#mdSilver)" />
+    <path d="M 4 6 L 16 22 L 8 20 L 0 8 Z" fill="url(#mdSilver)" />
+  </g>
+
+  <!-- Clear Glass Flacon with Pale Rose Juice -->
+  <rect x="150" y="152" width="100" height="170" rx="3" fill="#1C1318" stroke="#F472B6" stroke-width="1" stroke-opacity="0.4" />
+  <rect x="153" y="155" width="94" height="164" rx="2" fill="url(#mdPink)" />
+
+  <!-- Houndstooth Engraving Texture at Base -->
+  <line x1="150" y1="310" x2="250" y2="310" stroke="#F472B6" stroke-width="1" opacity="0.4" />
+  <line x1="150" y1="316" x2="250" y2="316" stroke="#F472B6" stroke-width="1" opacity="0.4" />
+
+  <!-- White Editorial Framed Label -->
+  <rect x="165" y="200" width="70" height="65" rx="1" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+  <rect x="168" y="203" width="64" height="59" rx="1" fill="none" stroke="#D1D5DB" stroke-width="0.5" />
+
+  <g transform="translate(200, 224)">
+    <text x="0" y="0" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="12" font-style="italic" font-weight="700" fill="#0F172A">Miss Dior</text>
+    <text x="0" y="14" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="7" font-weight="800" fill="#475569" letter-spacing="1">BLOOMING BOUQUET</text>
+    <text x="0" y="26" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="6.5" font-weight="700" fill="#94A3B8" letter-spacing="2">DIOR</text>
+  </g>
+</svg>

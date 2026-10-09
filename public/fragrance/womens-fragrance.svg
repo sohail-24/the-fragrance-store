@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="womensBg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#261E1A" />
+      <stop offset="60%" stop-color="#181312" />
+      <stop offset="100%" stop-color="#0E0C0B" />
+    </radialGradient>
+    <linearGradient id="roseGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B2825B" />
+      <stop offset="30%" stop-color="#F7D8C0" />
+      <stop offset="50%" stop-color="#D9A880" />
+      <stop offset="70%" stop-color="#FBECE0" />
+      <stop offset="100%" stop-color="#99633A" />
+    </linearGradient>
+    <linearGradient id="floralElixir" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FCECE3" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#ECC6AF" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#C28761" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#womensBg)" />
+  
+  <ellipse cx="400" cy="495" rx="170" ry="22" fill="#050505" opacity="0.85" />
+  <ellipse cx="400" cy="490" rx="130" ry="14" fill="#D9A880" opacity="0.14" />
+
+  <!-- Bottle Group -->
+  <g transform="translate(400, 310)">
+    <!-- Crystal Faceted Oval Flacon -->
+    <ellipse cx="0" cy="10" rx="105" ry="130" fill="url(#floralElixir)" stroke="url(#roseGold)" stroke-width="2" />
+    <ellipse cx="0" cy="10" rx="90" ry="115" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity="0.3" />
+    
+    <!-- Facet Cross Lines -->
+    <path d="M 0 -105 L 0 125" stroke="#FFFFFF" stroke-width="1" opacity="0.25" />
+    <path d="M -90 10 L 90 10" stroke="#FFFFFF" stroke-width="0.8" opacity="0.2" />
+    <circle cx="0" cy="10" r="55" fill="none" stroke="#FFFFFF" stroke-width="0.8" opacity="0.2" />
+
+    <!-- Pure Ivory & Gold Emblem -->
+    <g transform="translate(0, 10)">
+      <rect x="-60" y="-30" width="120" height="60" rx="3" fill="#FDFBF7" stroke="#D9A880" stroke-width="1" />
+      <text x="0" y="-8" text-anchor="middle" font-family="'Cormorant Garamond', serif" font-size="13" letter-spacing="3" fill="#1B1B1B" font-weight="700">PÉTALE D'OR</text>
+      <line x1="-25" y1="2" x2="25" y2="2" stroke="#D9A880" stroke-width="0.8" />
+      <text x="0" y="14" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" letter-spacing="2" fill="#887060">FLORAL ABSOLU</text>
+    </g>
+
+    <!-- Flacon Collar -->
+    <rect x="-24" y="-140" width="48" height="24" fill="url(#roseGold)" />
+    <circle cx="0" cy="-128" r="4" fill="#FDFBF7" />
+
+    <!-- Faceted Glass Stopper -->
+    <polygon points="0,-205 32,-175 22,-140 -22,-140 -32,-175" fill="url(#roseGold)" stroke="#6A4122" stroke-width="1.2" />
+    <polygon points="0,-198 24,-172 16,-144 -16,-144 -24,-172" fill="#FFFFFF" opacity="0.2" />
+  </g>
+</svg>

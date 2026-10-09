@@ -33,6 +33,7 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
+  Sparkles,
   Star,
   UserRound,
   Eye,
@@ -43,6 +44,7 @@ import {
 } from "lucide-react";
 import { getCategoryEmoji } from "./LandingPage";
 import { parseProductOptions } from "@/types";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 
 type CatalogProduct = {
   id: number;
@@ -77,6 +79,13 @@ export interface FoodCategoryItem {
 
 export function getCategoryImage(category: { name?: string | null; slug?: string | null }): string {
   const text = `${category.slug || ""} ${category.name || ""}`.toLowerCase();
+  // Fragrance categories
+  if (text.includes("men") || text.includes("homme")) return "/fragrance/mens-fragrance.svg";
+  if (text.includes("women") || text.includes("femme") || text.includes("floral")) return "/fragrance/womens-fragrance.svg";
+  if (text.includes("oud") || text.includes("attar") || text.includes("oriental")) return "/fragrance/oud-niche.svg";
+  if (text.includes("gift") || text.includes("set") || text.includes("discovery") || text.includes("coffret")) return "/fragrance/discovery-set.svg";
+
+  // Legacy mappings for backward compatibility
   if (text.includes("platter")) return "/products/chicken-platter.jpg";
   if (text.includes("gyro") || text.includes("wrap") || text.includes("pita")) return "/products/combo-gyro.jpg";
   if (text.includes("burger") || text.includes("sandwich") || text.includes("cheesesteak") || text.includes("sub")) return "/products/cheeseburger.jpg";
@@ -86,12 +95,19 @@ export function getCategoryImage(category: { name?: string | null; slug?: string
   if (text.includes("drink") || text.includes("beverage") || text.includes("soda") || text.includes("juice")) return "/products/soda-bottle.jpg";
   if (text.includes("dessert") || text.includes("sweet") || text.includes("baklava")) return "/products/baklava.jpg";
   if (text.includes("catering") || text.includes("party") || text.includes("feast")) return "/products/catering.jpg";
-  return "/products/chicken-platter.jpg";
+
+  return "/fragrance/hero-fragrance.svg";
 }
 
 export function getCategoryDescription(category: { name?: string | null; slug?: string | null; description?: string | null }): string {
   if (category.description?.trim()) return category.description.trim();
   const text = `${category.slug || ""} ${category.name || ""}`.toLowerCase();
+  if (text.includes("men")) return "Bold woods, refined aromatics & citrus";
+  if (text.includes("women")) return "Radiant florals, opulent ambers & accords";
+  if (text.includes("oud")) return "Rare aged agarwood & sacred essences";
+  if (text.includes("discovery") || text.includes("gift")) return "Curated coffrets & luxury samplers";
+
+  // Legacy mappings for backward compatibility
   if (text.includes("platter")) return "Hearty meals, full of flavor";
   if (text.includes("gyro") || text.includes("wrap") || text.includes("pita")) return "Authentic & Delicious";
   if (text.includes("burger") || text.includes("sandwich")) return "Juicy & Satisfying";
@@ -101,7 +117,8 @@ export function getCategoryDescription(category: { name?: string | null; slug?: 
   if (text.includes("drink") || text.includes("beverage")) return "Cool & Refreshing";
   if (text.includes("dessert") || text.includes("sweet")) return "Traditional sweet treats";
   if (text.includes("catering")) return "Feast packages & party platters";
-  return "Fresh & delicious halal food";
+
+  return "Curated fine fragrances and signature flacons";
 }
 
 export function getCategoryVisual(category: {
@@ -283,16 +300,16 @@ function BuyerMarketplace() {
                 <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
               <img
-                src="/branding/logo.png"
-                alt="Tex’s Chicken & Burgers"
-                className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-slate-100 bg-white p-0.5 shadow-xs"
+                src="/fragrance/brand-mark.svg"
+                alt="The Fragrance Store"
+                className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-[#C5A059]/40 bg-[#111111] p-0.5 shadow-xs"
               />
               <div>
-                <h1 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight">
-                  Tex’s Chicken & Burgers
+                <h1 className="text-xs sm:text-base font-serif font-bold tracking-wider text-slate-900 leading-tight uppercase">
+                  The Fragrance Store
                 </h1>
-                <p className="text-[9px] sm:text-xs text-slate-500 font-medium leading-none mt-0.5">
-                  Worth Every Bite
+                <p className="text-[9px] sm:text-xs text-[#9E7B35] font-semibold tracking-wider uppercase leading-none mt-0.5">
+                  House of Brands
                 </p>
               </div>
             </Link>
@@ -314,7 +331,7 @@ function BuyerMarketplace() {
               >
                 <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white shadow-xs">
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A059] px-1 text-[9px] font-bold text-[#111111] shadow-xs">
                     {cartCount}
                   </span>
                 )}
@@ -331,28 +348,21 @@ function BuyerMarketplace() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="h-9 sm:h-10 pl-9 pr-9 rounded-xl border-slate-200 bg-white focus:bg-white text-xs sm:text-sm placeholder:text-slate-400 focus-visible:ring-emerald-600 shadow-xs"
-              placeholder="Search for products, platters, burgers, and more..."
+              className="h-9 sm:h-10 pl-9 pr-9 rounded-xl border-slate-200 bg-white focus:bg-white text-xs sm:text-sm placeholder:text-slate-400 focus-visible:ring-[#C5A059] shadow-xs"
+              placeholder="Search fragrances, notes, collections..."
             />
             <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
           </div>
 
           {/* Section Title & Slogan */}
-          <div className="text-center pt-0.5 pb-0.5 space-y-0.5">
-            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-emerald-900">
-              <span className="text-base leading-none">🌿</span>
-              <span>FOOD CATEGORIES</span>
+          <div className="text-center pt-1 pb-1 space-y-0.5">
+            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold uppercase tracking-widest text-[#111111]">
+              <Sparkles className="h-3.5 w-3.5 text-[#C5A059]" />
+              <span className="font-serif text-base sm:text-lg">FRAGRANCE COLLECTIONS</span>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
-              Choose what you're craving
+              Discover your signature scent
             </p>
-
-            {/* Decorative Slogan */}
-            <div className="pt-0.5 text-center">
-              <p className="text-[11px] xs:text-xs font-serif italic text-emerald-800/80 tracking-wide">
-                Good Food Brings Good People
-              </p>
-            </div>
           </div>
 
           {/* 2-Column Responsive Grid of Category Cards */}
@@ -408,64 +418,7 @@ function BuyerMarketplace() {
         </main>
 
         {/* Mobile Bottom Navigation - Categories is ACTIVE GREEN */}
-        <nav
-          aria-label="Mobile Navigation"
-          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FFFFFF] border-t border-[#E5E7EB] shadow-[0_-1px_6px_rgba(0,0,0,0.04)] px-2 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-        >
-          <div className="grid grid-cols-4 items-center max-w-md mx-auto">
-            {/* 1. Home */}
-            <Link
-              to="/"
-              id="mobile-nav-home"
-              className="flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-            >
-              <Home className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-              <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">Home</span>
-            </Link>
-
-            {/* 2. Categories - ACTIVE GREEN */}
-            <Link
-              to="/products"
-              id="mobile-nav-categories"
-              onClick={() => {
-                setSearchParams({});
-                setSearch("");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="flex flex-col items-center justify-center py-0.5 text-emerald-700 font-bold transition-colors group"
-            >
-              <LayoutGrid className="h-5 w-5 text-emerald-700 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] xs:text-[11px] font-bold mt-0.5 leading-none">Categories</span>
-            </Link>
-
-            {/* 3. Cart */}
-            <Link
-              to="/cart"
-              id="mobile-nav-cart"
-              className="relative flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-            >
-              <div className="relative">
-                <ShoppingCart className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-                {!!cartCount && (
-                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white shadow-xs">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">Cart</span>
-            </Link>
-
-            {/* 4. About */}
-            <Link
-              to="/about"
-              id="mobile-nav-about"
-              className="flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-            >
-              <Info className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-              <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">About</span>
-            </Link>
-          </div>
-        </nav>
+        <CustomerBottomNav active="categories" />
       </div>
     );
   }
@@ -491,16 +444,16 @@ function BuyerMarketplace() {
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
             <img
-              src="/branding/logo.png"
-              alt="Tex’s Chicken & Burgers"
-              className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-slate-100 bg-white p-0.5 shadow-xs"
+              src="/fragrance/brand-mark.svg"
+              alt="The Fragrance Store"
+              className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-[#C5A059]/40 bg-[#111111] p-0.5 shadow-xs"
             />
             <div>
-              <h1 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight">
-                Tex’s Chicken & Burgers
+              <h1 className="text-xs sm:text-base font-serif font-bold tracking-wider text-slate-900 leading-tight uppercase">
+                The Fragrance Store
               </h1>
-              <p className="text-[9px] sm:text-xs text-slate-500 font-medium leading-none mt-0.5">
-                Worth Every Bite
+              <p className="text-[9px] sm:text-xs text-[#9E7B35] font-semibold tracking-wider uppercase leading-none mt-0.5">
+                House of Brands
               </p>
             </div>
           </button>
@@ -787,79 +740,21 @@ function BuyerMarketplace() {
               </Card>
             )}
 
-            {/* 100% Certified Halal Trust Banner */}
-            <div className="mt-4 rounded-xl border border-emerald-800/40 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 px-4 py-3 text-center text-white shadow-xs">
-              <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-extrabold tracking-wide text-amber-300 uppercase">
-                <span className="text-sm">☪</span>
-                <span>100% CERTIFIED HALAL</span>
+            {/* Authentic Luxury Fragrance Trust Banner */}
+            <div className="mt-4 rounded-none border border-[#C5A059]/40 bg-[#111111] px-4 py-3 text-center text-[#FDFBF7] shadow-xs">
+              <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold tracking-widest text-[#E0C895] uppercase">
+                <Sparkles className="h-3.5 w-3.5 text-[#C5A059]" />
+                <span>100% AUTHENTIC GUARANTEED</span>
               </div>
-              <p className="text-[10px] sm:text-xs text-emerald-200/90 font-medium mt-0.5">
-                Fresh • Healthy • Pure Taste
+              <p className="text-[10px] sm:text-xs text-[#9E978C] font-normal mt-0.5">
+                Curated Provenance · Pristine Storage · Pure Extraits
               </p>
             </div>
           </main>
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation - Categories is ACTIVE GREEN */}
-      <nav
-        aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FFFFFF] border-t border-[#E5E7EB] shadow-[0_-1px_6px_rgba(0,0,0,0.04)] px-2 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="grid grid-cols-4 items-center max-w-md mx-auto">
-          {/* 1. Home */}
-          <Link
-            to="/"
-            id="mobile-nav-home"
-            className="flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-          >
-            <Home className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-            <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">Home</span>
-          </Link>
-
-          {/* 2. Categories - ACTIVE GREEN */}
-          <Link
-            to="/products"
-            id="mobile-nav-categories"
-            onClick={() => {
-              setSearchParams({});
-              setSearch("");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="flex flex-col items-center justify-center py-0.5 text-emerald-700 font-bold transition-colors group"
-          >
-            <LayoutGrid className="h-5 w-5 text-emerald-700 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] xs:text-[11px] font-bold mt-0.5 leading-none">Categories</span>
-          </Link>
-
-          {/* 3. Cart */}
-          <Link
-            to="/cart"
-            id="mobile-nav-cart"
-            className="relative flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-          >
-            <div className="relative">
-              <ShoppingCart className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-              {!!cartCount && (
-                <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white shadow-xs">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">Cart</span>
-          </Link>
-
-          {/* 4. About */}
-          <Link
-            to="/about"
-            id="mobile-nav-about"
-            className="flex flex-col items-center justify-center py-0.5 text-slate-500 hover:text-slate-800 font-medium transition-colors group"
-          >
-            <Info className="h-5 w-5 text-slate-500 group-hover:text-slate-800 group-hover:scale-110 transition-all" />
-            <span className="text-[10px] xs:text-[11px] mt-0.5 leading-none">About</span>
-          </Link>
-        </div>
-      </nav>
+      <CustomerBottomNav active="categories" />
     </div>
   );
 }

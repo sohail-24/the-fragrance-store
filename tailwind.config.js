@@ -5,6 +5,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          obsidian: "#111111",
+          charcoal: "#1B1B1B",
+          ivory: "#FDFBF7",
+          gold: "#C5A059",
+          "gold-light": "#E0C895",
+          "gold-dark": "#9E7B35",
+          border: "#E4E0D8",
+          sand: "#F4EFE6",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -48,6 +58,10 @@ module.exports = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      fontFamily: {
+        serif: ['"Cormorant Garamond"', "Georgia", "serif"],
+        sans: ['"Plus Jakarta Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",

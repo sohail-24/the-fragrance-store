@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <radialGradient id="giftBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#26221A" />
+      <stop offset="60%" stop-color="#14120D" />
+      <stop offset="100%" stop-color="#050403" />
+    </radialGradient>
+    <linearGradient id="giftGoldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF0C4" />
+      <stop offset="50%" stop-color="#D8B168" />
+      <stop offset="100%" stop-color="#7B561B" />
+    </linearGradient>
+    <linearGradient id="goldRibbon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5D6" />
+      <stop offset="40%" stop-color="#E5BE6B" />
+      <stop offset="80%" stop-color="#AC812E" />
+      <stop offset="100%" stop-color="#6E4C12" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="150" cy="150" r="146" fill="url(#giftBg)" stroke="url(#giftGoldRing)" stroke-width="3" />
+  <circle cx="150" cy="150" r="141" fill="none" stroke="#FFFFFF" stroke-width="0.75" opacity="0.25" />
+
+  <g transform="translate(150, 160)">
+    <!-- Base Shadow -->
+    <ellipse cx="0" cy="65" rx="75" ry="14" fill="#000000" opacity="0.85" />
+
+    <!-- Open/Tilted Luxury Gift Box (Deep Charcoal) -->
+    <rect x="-65" y="-30" width="130" height="90" rx="5" fill="#141414" stroke="url(#giftGoldRing)" stroke-width="1.5" />
+    <rect x="-60" y="-25" width="120" height="80" rx="3" fill="#0B0B0B" stroke="#2B2B2B" stroke-width="0.8" />
+
+    <!-- Miniature Bottles Inside -->
+    <!-- Mini Bottle 1 (Left) -->
+    <rect x="-48" y="-12" width="22" height="42" rx="3" fill="#E8B856" stroke="#FFF0C4" stroke-width="0.8" />
+    <rect x="-44" y="-22" width="14" height="10" rx="1.5" fill="url(#goldRibbon)" />
+
+    <!-- Mini Bottle 2 (Center) -->
+    <rect x="-14" y="-18" width="28" height="48" rx="4" fill="#202A3D" stroke="#5E7FA8" stroke-width="0.8" />
+    <rect x="-10" y="-30" width="20" height="12" rx="2" fill="#181818" stroke="#333333" stroke-width="0.8" />
+    <text x="0" y="8" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="6" font-weight="900" fill="#FFFFFF">FS</text>
+
+    <!-- Mini Bottle 3 (Right) -->
+    <rect x="26" y="-12" width="22" height="42" rx="3" fill="#EAA788" stroke="#FFF0C4" stroke-width="0.8" />
+    <rect x="30" y="-22" width="14" height="10" rx="1.5" fill="url(#goldRibbon)" />
+
+    <!-- Opulent Gold Satin Bow On Front / Corner -->
+    <g transform="translate(45, -28)">
+      <!-- Left Bow Loop -->
+      <path d="M 0 0 C -25 -20 -35 5 -10 5 Z" fill="url(#goldRibbon)" stroke="#7B561B" stroke-width="0.6" />
+      <!-- Right Bow Loop -->
+      <path d="M 0 0 C 25 -20 35 5 10 5 Z" fill="url(#goldRibbon)" stroke="#7B561B" stroke-width="0.6" />
+      <!-- Center Knot -->
+      <circle cx="0" cy="0" r="5" fill="#FFF0C4" stroke="#7B561B" stroke-width="0.8" />
+      <!-- Ribbon Tails -->
+      <path d="M -2 4 L -14 30 L -6 28 L 0 5 Z" fill="url(#goldRibbon)" opacity="0.9" />
+      <path d="M 2 4 L 14 30 L 6 28 L 0 5 Z" fill="url(#goldRibbon)" opacity="0.9" />
+    </g>
+  </g>
+</svg>

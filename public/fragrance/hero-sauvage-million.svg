@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 800" width="100%" height="100%">
+  <defs>
+    <!-- Background glow and rock texture -->
+    <radialGradient id="rockGlow" cx="65%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#4E3314" stop-opacity="0.8" />
+      <stop offset="30%" stop-color="#2D1C08" stop-opacity="0.6" />
+      <stop offset="70%" stop-color="#120E08" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#050505" stop-opacity="1" />
+    </radialGradient>
+
+    <!-- Gold bar gradients for 1 Million -->
+    <linearGradient id="goldBar" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF0C4" />
+      <stop offset="20%" stop-color="#E5C175" />
+      <stop offset="50%" stop-color="#D4A74F" />
+      <stop offset="75%" stop-color="#B28432" />
+      <stop offset="100%" stop-color="#764F16" />
+    </linearGradient>
+    <linearGradient id="goldBarFacet" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#553A10" />
+      <stop offset="15%" stop-color="#FDE8B5" />
+      <stop offset="40%" stop-color="#D8AF5B" />
+      <stop offset="70%" stop-color="#8F621C" />
+      <stop offset="100%" stop-color="#3D2708" />
+    </linearGradient>
+
+    <!-- Sauvage dark midnight blue-black glass -->
+    <linearGradient id="sauvageGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1C273C" />
+      <stop offset="40%" stop-color="#0E1624" />
+      <stop offset="80%" stop-color="#060A10" />
+      <stop offset="100%" stop-color="#020306" />
+    </linearGradient>
+    <linearGradient id="sauvageReflection" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4B6A9C" stop-opacity="0.4" />
+      <stop offset="15%" stop-color="#FFFFFF" stop-opacity="0.25" />
+      <stop offset="35%" stop-color="#1C273C" stop-opacity="0" />
+      <stop offset="85%" stop-color="#6F9BD8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.3" />
+    </linearGradient>
+    <linearGradient id="sauvageCap" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#141414" />
+      <stop offset="50%" stop-color="#383838" />
+      <stop offset="100%" stop-color="#0C0C0C" />
+    </linearGradient>
+
+    <!-- Pedestal gold water refractions -->
+    <radialGradient id="plinthAmber" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E8BE65" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#C5963E" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Ambient Backdrop -->
+  <rect width="900" height="800" fill="url(#rockGlow)" />
+
+  <!-- Textured Gold/Amber Rock Formations in Background -->
+  <g opacity="0.35">
+    <path d="M 400 800 L 520 450 L 680 490 L 820 320 L 900 360 L 900 800 Z" fill="#281B0E" />
+    <path d="M 460 800 L 580 480 L 710 520 L 850 380 L 900 420 L 900 800 Z" fill="#442D14" opacity="0.6" />
+    <polygon points="560,540 640,490 750,560 680,680" fill="#784E1A" opacity="0.4" />
+    <polygon points="720,420 810,380 870,460 790,520" fill="#C5963E" opacity="0.25" />
+  </g>
+
+  <!-- Grounding Golden Plinth Glow -->
+  <ellipse cx="560" cy="710" rx="320" ry="70" fill="url(#plinthAmber)" />
+  <ellipse cx="560" cy="700" rx="260" ry="25" fill="#0D0B09" stroke="#D4A74F" stroke-width="1" stroke-opacity="0.4" />
+
+  <!-- ========================================== -->
+  <!-- 1. DIOR SAUVAGE BOTTLE (Foreground Left)   -->
+  <!-- ========================================== -->
+  <g transform="translate(420, 480)">
+    <!-- Base Shadow -->
+    <ellipse cx="0" cy="220" rx="140" ry="24" fill="#000000" opacity="0.9" />
+
+    <!-- Sauvage Main Cylindrical Glass Body -->
+    <rect x="-110" y="-120" width="220" height="330" rx="24" fill="url(#sauvageGlass)" stroke="#38547C" stroke-width="1.5" stroke-opacity="0.6" />
+    <!-- Glass Highlights / Specular Stripes -->
+    <rect x="-106" y="-116" width="212" height="322" rx="20" fill="url(#sauvageReflection)" />
+    <!-- Vertical Bright Specular Ray -->
+    <path d="M -80 -115 L -68 -115 L -68 200 L -80 200 Z" fill="#FFFFFF" opacity="0.18" />
+    <path d="M 72 -115 L 80 -115 L 80 200 L 72 200 Z" fill="#FFFFFF" opacity="0.15" />
+
+    <!-- Subtle Blue Elixir Glow at Bottom -->
+    <path d="M -90 140 C -40 160 40 160 90 140 L 90 195 C 40 215 -40 215 -90 195 Z" fill="#20406E" opacity="0.45" />
+
+    <!-- Typography: SAUVAGE -->
+    <text x="0" y="20" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="28" font-weight="900" letter-spacing="5" fill="#FFFFFF">SAUVAGE</text>
+    <text x="0" y="42" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" letter-spacing="3" fill="#A8BCCE" font-weight="600">EAU DE PARFUM</text>
+    
+    <!-- Christian Dior Script / Wordmark -->
+    <text x="0" y="150" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="32" font-style="italic" fill="#E8F0FA" font-weight="600">Dior</text>
+
+    <!-- Neck & Magnetic Pleated Cap -->
+    <rect x="-35" y="-148" width="70" height="28" fill="#1C1C1C" />
+    <rect x="-65" y="-230" width="130" height="84" rx="8" fill="url(#sauvageCap)" stroke="#333333" stroke-width="1" />
+    <!-- Cap Horizontal Ribs -->
+    <line x1="-63" y1="-210" x2="63" y2="-210" stroke="#050505" stroke-width="2.5" />
+    <line x1="-63" y1="-195" x2="63" y2="-195" stroke="#050505" stroke-width="2.5" />
+    <line x1="-63" y1="-180" x2="63" y2="-180" stroke="#050505" stroke-width="2.5" />
+    <line x1="-63" y1="-165" x2="63" y2="-165" stroke="#050505" stroke-width="2.5" />
+    <!-- Cap Highlight -->
+    <path d="M -45 -228 L -35 -228 L -35 -148 L -45 -148 Z" fill="#FFFFFF" opacity="0.15" />
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 2. PACO RABANNE 1 MILLION (Background Right)   -->
+  <!-- ============================================== -->
+  <g transform="translate(730, 420)">
+    <!-- Base Shadow -->
+    <ellipse cx="0" cy="280" rx="90" ry="20" fill="#000000" opacity="0.85" />
+
+    <!-- 1 Million Gold Bullion Bar Shape -->
+    <!-- Front Face -->
+    <rect x="-85" y="-280" width="170" height="550" rx="10" fill="url(#goldBarFacet)" stroke="#FCE5B4" stroke-width="1.8" stroke-opacity="0.8" />
+    <!-- Beveled Edge Inset -->
+    <rect x="-76" y="-270" width="152" height="530" rx="6" fill="url(#goldBar)" />
+
+    <!-- Spray Aperture Circle on Top -->
+    <circle cx="0" cy="-225" r="14" fill="#2A1B05" stroke="#FFF0C4" stroke-width="1.5" />
+    <circle cx="0" cy="-225" r="5" fill="#111111" />
+
+    <!-- Stamped "1 MILLION" Bullion Typography -->
+    <!-- Giant Numeral 1 -->
+    <text x="0" y="-80" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="82" font-weight="900" fill="#754E15" opacity="0.9">1</text>
+    <text x="0" y="-83" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="82" font-weight="900" fill="#FFF0C4" opacity="0.85">1</text>
+
+    <!-- Word MILLION -->
+    <text x="0" y="-35" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="900" letter-spacing="4" fill="#583B10">MILLION</text>
+    <text x="0" y="-36" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="900" letter-spacing="4" fill="#FFF2CE">MILLION</text>
+
+    <!-- Floral / Filigree Emblem Underneath -->
+    <path d="M -30 -15 C -15 -25 15 -25 30 -15 C 15 -5 -15 -5 -30 -15 Z" fill="#764F16" />
+    <circle cx="0" cy="-15" r="3" fill="#FFF0C4" />
+
+    <!-- Eau de Toilette / Paco Rabanne Engraving -->
+    <text x="0" y="140" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" letter-spacing="3" fill="#6B4512" font-weight="700">EAU DE TOILETTE</text>
+    <text x="0" y="195" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" letter-spacing="2" fill="#5A3A0F" font-weight="800">paco rabanne</text>
+    <text x="0" y="215" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" letter-spacing="2" fill="#7A5318">700123 · 100 ML</text>
+
+    <!-- Golden Specular Sheen Ray -->
+    <path d="M -60 -268 L -45 -268 L -45 255 L -60 255 Z" fill="#FFFFFF" opacity="0.3" />
+  </g>
+
+  <!-- Golden Ember Dust Particle Sparks -->
+  <g fill="#FDE8B5" opacity="0.75">
+    <circle cx="340" cy="560" r="2.5" />
+    <circle cx="360" cy="510" r="1.5" />
+    <circle cx="580" cy="460" r="2" />
+    <circle cx="610" cy="380" r="1.5" />
+    <circle cx="780" cy="310" r="2" />
+    <circle cx="820" cy="440" r="1.5" />
+    <circle cx="480" cy="670" r="2.5" />
+    <circle cx="650" cy="690" r="2" />
+  </g>
+</svg>

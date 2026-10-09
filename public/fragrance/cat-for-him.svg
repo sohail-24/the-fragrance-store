@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <radialGradient id="himBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1B2B48" />
+      <stop offset="60%" stop-color="#0E1726" />
+      <stop offset="100%" stop-color="#04070D" />
+    </radialGradient>
+    <linearGradient id="himGoldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE5B4" />
+      <stop offset="50%" stop-color="#D8B168" />
+      <stop offset="100%" stop-color="#7B561B" />
+    </linearGradient>
+  </defs>
+  <!-- Circular Frame with Outer Glow -->
+  <circle cx="150" cy="150" r="146" fill="url(#himBg)" stroke="url(#himGoldRing)" stroke-width="3" />
+  <circle cx="150" cy="150" r="141" fill="none" stroke="#FFFFFF" stroke-width="0.75" opacity="0.25" />
+
+  <!-- Splash / Smoke Effect Behind Bottle -->
+  <path d="M 60 210 C 90 190 130 220 170 195 C 210 170 230 200 240 225 C 210 245 100 250 60 210 Z" fill="#2E4A7D" opacity="0.45" filter="blur(6px)" />
+
+  <!-- Midnight Blue Flacon -->
+  <g transform="translate(150, 155)">
+    <!-- Base Shadow -->
+    <ellipse cx="0" cy="68" rx="55" ry="12" fill="#000000" opacity="0.8" />
+    <!-- Flacon Body -->
+    <rect x="-48" y="-45" width="96" height="110" rx="10" fill="#0B1524" stroke="#486D9E" stroke-width="1.2" />
+    <!-- Glass Reflections -->
+    <path d="M -38 -40 L -30 -40 L -30 60 L -38 60 Z" fill="#FFFFFF" opacity="0.2" />
+    <path d="M 32 -40 L 38 -40 L 38 60 L 32 60 Z" fill="#6A96D4" opacity="0.3" />
+    <!-- Blue Glow Base -->
+    <path d="M -40 35 C -20 45 20 45 40 35 L 40 58 C 20 68 -20 68 -40 58 Z" fill="#1C3F75" opacity="0.6" />
+    <!-- Label -->
+    <text x="0" y="8" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="900" letter-spacing="2" fill="#EBF3FD">PARFUM</text>
+    <text x="0" y="20" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="6" letter-spacing="1.5" fill="#89AEDB">POUR HOMME</text>
+    <!-- Cap -->
+    <rect x="-16" y="-58" width="32" height="14" fill="#1A1A1A" />
+    <rect x="-26" y="-85" width="52" height="30" rx="4" fill="#111111" stroke="#333333" stroke-width="1" />
+    <line x1="-24" y1="-76" x2="24" y2="-76" stroke="#262626" stroke-width="1.5" />
+    <line x1="-24" y1="-67" x2="24" y2="-67" stroke="#262626" stroke-width="1.5" />
+  </g>
+</svg>
