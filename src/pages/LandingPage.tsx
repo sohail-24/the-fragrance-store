@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -246,6 +246,100 @@ export const ILLUSTRATIVE_DEMO_FRAGRANCES: IllustrativeFragrance[] = [
   },
 ];
 
+// Hero Campaign Advertisement Data (Phase 2.6: Exactly 3 campaigns auto-rotating every 5 seconds)
+export const HERO_ROTATION_INTERVAL_MS = 5000;
+
+export interface HeroCampaign {
+  id: number;
+  eyebrow: string;
+  headlineFirst: string;
+  headlineSecond: string;
+  headlineWord1: string;
+  headlineWord2: string;
+  description: string;
+  ctaText: string;
+  ctaTarget: "featured" | "category-unisex" | "category-gift-sets";
+  image: string;
+  alt: string;
+}
+
+export const HERO_CAMPAIGNS: HeroCampaign[] = [
+  {
+    id: 1,
+    eyebrow: "LUXURY • ELEGANCE • EVERYDAY YOU",
+    headlineFirst: "Find Your",
+    headlineSecond: "Signature Scent",
+    headlineWord1: "Signature",
+    headlineWord2: "Scent",
+    description:
+      "Discover iconic fragrances and explore distinctive accords for every occasion. Curated with precision from renowned independent houses and master perfumers.",
+    ctaText: "SHOP NOW",
+    ctaTarget: "featured",
+    image: "/fragrance/hero-sauvage-million.svg",
+    alt: "Dior Sauvage and Paco Rabanne 1 Million luxury perfume flacons",
+  },
+  {
+    id: 2,
+    eyebrow: "NICHE & ARTISANAL • PRIVATE BLEND",
+    headlineFirst: "Haute Parfumerie &",
+    headlineSecond: "Artisanal Extraits",
+    headlineWord1: "Artisanal",
+    headlineWord2: "Extraits",
+    description:
+      "Immerse in rare botanical extraits, rich smoky ouds, and distinctive unisex accords crafted by visionary master perfumers.",
+    ctaText: "EXPLORE NICHE",
+    ctaTarget: "category-unisex",
+    image: "/fragrance/hero-fragrance.svg",
+    alt: "Artisanal private blend and niche perfume flacons",
+  },
+  {
+    id: 3,
+    eyebrow: "CURATED COFFRETS • DISCOVERY SETS",
+    headlineFirst: "Curated Luxury",
+    headlineSecond: "Discovery Sets",
+    headlineWord1: "Discovery",
+    headlineWord2: "Sets",
+    description:
+      "Experience iconic fragrance wardrobes before choosing your full flacon. Includes complimentary atomizers and verified authentic vials.",
+    ctaText: "DISCOVER SETS",
+    ctaTarget: "category-gift-sets",
+    image: "/fragrance/discovery-set.svg",
+    alt: "Curated fragrance discovery sets and luxury coffrets",
+  },
+];
+
+/**
+ * Phase 2.6 Helper: Formats headline so the final two words are displayed on two separate lines.
+ * e.g. "Find Your Signature Scent" -> lead: "Find Your", line2: "Signature", line3: "Scent"
+ */
+export function getHeadlineLines(campaign: HeroCampaign): {
+  leadText: string;
+  line2: string;
+  line3: string;
+} {
+  if (campaign.headlineWord1 && campaign.headlineWord2) {
+    return {
+      leadText: campaign.headlineFirst,
+      line2: campaign.headlineWord1,
+      line3: campaign.headlineWord2,
+    };
+  }
+  const full = `${campaign.headlineFirst} ${campaign.headlineSecond}`.trim();
+  const words = full.split(/\s+/);
+  if (words.length >= 2) {
+    return {
+      leadText: words.slice(0, words.length - 2).join(" "),
+      line2: words[words.length - 2],
+      line3: words[words.length - 1],
+    };
+  }
+  return {
+    leadText: campaign.headlineFirst,
+    line2: campaign.headlineSecond,
+    line3: "",
+  };
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -253,10 +347,30 @@ export default function LandingPage() {
   const { isOrderActive, activeOrders, activeCount } = usePlacedOrder();
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<"all" | "him" | "her" | "unisex" | "gift-sets">("all");
   const [isDemoPreviewActive, setIsDemoPreviewActive] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Auto-rotate through exactly 3 hero advertisements every 5 seconds (Phase 2.6)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_CAMPAIGNS.length);
+    }, HERO_ROTATION_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  function handleCampaignCta(campaign: HeroCampaign) {
+    if (campaign.ctaTarget === "featured") {
+      scrollToSection("featured-fragrances-section");
+    } else if (campaign.ctaTarget === "category-unisex") {
+      handleCategoryClick("unisex");
+    } else if (campaign.ctaTarget === "category-gift-sets") {
+      handleCategoryClick("gift-sets");
+    }
+  }
   const utils = trpc.useUtils();
 
   // Queries
@@ -365,66 +479,58 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col font-sans selection:bg-[#C5A059] selection:text-[#111111] pb-24 sm:pb-20">
       
       {/* ====================================================================== */}
-      {/* 0. ANNOUNCEMENT BAR                                                    */}
-      {/* ====================================================================== */}
-      <div className="bg-[#1A1815] border-b border-[#2E2922] py-1.5 px-3 text-center text-[10px] sm:text-xs text-[#E5D5B8] flex items-center justify-center gap-2">
-        <Sparkles className="h-3 w-3 text-[#C5A059] shrink-0" />
-        <span className="font-medium tracking-wide">
-          Complimentary Luxury Samples with Orders Over $100 &bull; Verified Authentic Flacons
-        </span>
-      </div>
-
-      {/* ====================================================================== */}
-      {/* 1. MOBILE-FIRST HEADER & FULL-WIDTH SEARCH                             */}
+      {/* 1. MOBILE HEADER — SINGLE ROW (MATCHING WIREFRAME)                     */}
       {/* ====================================================================== */}
       <header className="sticky top-0 z-40 bg-[#111111]/98 backdrop-blur-md border-b border-[#262421] text-[#FDFBF7]">
-        {/* Main Header Row */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        {/* Main Header Single Row */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
-          {/* LEFT: [MENU] ICON */}
-          <div className="flex items-center">
+          {/* LEFT: [MENU] + [STORE LOGO + WORDMARK] */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* 1. Menu Icon */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-1 text-[#FDFBF7] hover:text-[#C5A059] focus:outline-none focus:ring-1 focus:ring-[#C5A059] transition-colors"
+              className="p-2 -ml-1.5 text-[#FDFBF7] hover:text-[#C5A059] focus:outline-none focus:ring-1 focus:ring-[#C5A059] transition-colors"
               aria-label="Open Navigation Menu"
             >
               <Menu className="h-6 w-6" />
             </button>
-          </div>
 
-          {/* CENTER: [STORE NAME & MONOGRAM] */}
-          <div className="flex items-center justify-center flex-1">
+            {/* 2. Store Logo + Wordmark */}
             <Link
               to="/"
-              className="flex items-center gap-2 group text-center"
+              className="flex items-center gap-2 group"
               aria-label="The Fragrance Store - House of Brands"
             >
               <div className="h-7 w-7 rounded-xs overflow-hidden border border-[#C5A059]/50 bg-[#1B1B1B] p-0.5 shrink-0 group-hover:border-[#C5A059] transition-colors">
                 <img
                   src="/fragrance/brand-mark.svg"
-                  alt="Monogram Crest"
+                  alt="KTK Monogram Crest"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex flex-col text-left">
-                <span className="font-serif text-sm sm:text-base lg:text-lg font-bold tracking-[0.16em] uppercase text-[#FDFBF7] group-hover:text-[#E0C895] transition-colors leading-tight">
+                <span className="font-serif text-xs sm:text-base lg:text-lg font-bold tracking-[0.14em] uppercase text-[#FDFBF7] group-hover:text-[#E0C895] transition-colors leading-tight whitespace-nowrap">
                   The Fragrance Store
                 </span>
-                <span className="text-[8px] sm:text-[9.5px] tracking-[0.3em] font-sans text-[#C5A059] uppercase leading-none font-semibold">
+                <span className="text-[7.5px] sm:text-[9.5px] tracking-[0.28em] font-sans text-[#C5A059] uppercase leading-none font-semibold whitespace-nowrap">
                   House of Brands
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* RIGHT: [CART] / SHOPPING BAG */}
-          <div className="flex items-center gap-2">
-            {/* Active Orders Tracker if available */}
+          {/* 3. FLEXIBLE EMPTY SPACE (Pushes right action icons to the far right edge) */}
+          <div className="flex-1 min-w-2" />
+
+          {/* RIGHT: [SEARCH ICON] + [BAG WITH LIVE COUNT] */}
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
+            {/* Active Orders Tracker if available (Desktop / Tablet) */}
             {isOrderActive && (
               <Link
                 to={`/bill?orderId=${encodeURIComponent(activeOrders[0]?.id || "")}`}
-                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 border border-[#C5A059]/40 bg-[#1B1B1B] text-[#C5A059] hover:bg-[#C5A059]/10 text-[11px] font-medium"
+                className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 border border-[#C5A059]/40 bg-[#1B1B1B] text-[#C5A059] hover:bg-[#C5A059]/10 text-[11px] font-medium"
               >
                 <span>Orders ({activeCount})</span>
               </Link>
@@ -434,7 +540,7 @@ export default function LandingPage() {
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
-                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-2"
+                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
               >
                 <UserRound className="h-4 w-4 text-[#C5A059]" />
                 <span className="truncate max-w-[80px]">{user?.name ?? "Account"}</span>
@@ -442,61 +548,90 @@ export default function LandingPage() {
             ) : (
               <Link
                 to="/admin/login"
-                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-2"
+                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
               >
                 <UserRound className="h-4 w-4 text-[#C5A059]" />
                 <span>Sign In</span>
               </Link>
             )}
 
+            {/* 4. Search Icon Button (Toggles search drawer / bar) */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchOpen((prev) => {
+                  const nextState = !prev;
+                  if (nextState) {
+                    setTimeout(() => searchInputRef.current?.focus(), 100);
+                  }
+                  return nextState;
+                });
+              }}
+              className={`p-2 transition-colors rounded-sm ${
+                isSearchOpen
+                  ? "text-[#C5A059] bg-[#1E1C19]"
+                  : "text-[#FDFBF7] hover:text-[#C5A059]"
+              }`}
+              aria-label="Toggle Search"
+              aria-expanded={isSearchOpen}
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
+            {/* 5. Shopping Bag Icon Button with Live Counter Badge */}
             <Link
               to="/cart"
               id="header-cart-btn"
-              className="relative inline-flex items-center justify-center h-9 px-2.5 sm:px-3 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] transition-all group font-bold"
-              aria-label="Shopping Bag"
+              className="relative p-2 text-[#FDFBF7] hover:text-[#C5A059] transition-colors group flex items-center justify-center"
+              aria-label={`Shopping Bag (${cartCount} items)`}
             >
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs tracking-wider uppercase ml-1.5">
-                Cart
+              <ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-105" />
+              {/* Badge: Visible on bag with clear counter */}
+              <span
+                className={`absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black leading-none transition-all ${
+                  cartCount > 0
+                    ? "bg-[#C5A059] text-[#111111]"
+                    : "bg-[#2A2723] text-[#A69F94] border border-[#3E3A33]"
+                }`}
+              >
+                {cartCount}
               </span>
-              {cartCount > 0 && (
-                <span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#111111] px-1 text-[9.5px] font-extrabold text-[#FDFBF7]">
-                  {cartCount}
-                </span>
-              )}
             </Link>
           </div>
         </div>
 
-        {/* FULL-WIDTH SEARCH INPUT (Directly below main header row as specified in wireframe) */}
-        <div className="px-3 pb-2.5 pt-0.5 border-t border-[#22201D] bg-[#161616]">
-          <form onSubmit={handleSearchSubmit} className="relative w-full max-w-7xl mx-auto">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9E978C] pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search fragrances, brands, notes..."
-              className="h-9 w-full bg-[#1F1F1F] border border-[#2E2C29] pl-9.5 pr-20 text-xs text-[#FDFBF7] placeholder:text-[#888177] focus:outline-none focus:border-[#C5A059] transition-colors"
-            />
-            {search.trim().length > 0 && (
+        {/* SEARCH EXPANDABLE BAR (Reveals seamlessly when search icon is clicked or maintains active search query) */}
+        {isSearchOpen && (
+          <div className="px-3 pb-3 pt-1 border-t border-[#22201D] bg-[#161616] animate-in fade-in duration-150">
+            <form onSubmit={handleSearchSubmit} className="relative w-full max-w-7xl mx-auto">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9E978C] pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search fragrances, brands, notes..."
+                className="h-9 w-full bg-[#1F1F1F] border border-[#2E2C29] pl-9.5 pr-20 text-xs text-[#FDFBF7] placeholder:text-[#888177] focus:outline-none focus:border-[#C5A059] transition-colors"
+              />
+              {search.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-14 top-1/2 -translate-y-1/2 text-xs text-[#9E978C] hover:text-[#FDFBF7] px-1.5"
+                  aria-label="Clear Search"
+                >
+                  ✕
+                </button>
+              )}
               <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-14 top-1/2 -translate-y-1/2 text-xs text-[#9E978C] hover:text-[#FDFBF7] px-1.5"
-                aria-label="Clear Search"
+                type="submit"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-3 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] text-[10px] font-bold tracking-wider uppercase transition-colors"
               >
-                ✕
+                Search
               </button>
-            )}
-            <button
-              type="submit"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-3 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] text-[10px] font-bold tracking-wider uppercase transition-colors"
-            >
-              Search
-            </button>
-          </form>
-        </div>
+            </form>
+          </div>
+        )}
       </header>
 
       {/* ====================================================================== */}
@@ -626,7 +761,7 @@ export default function LandingPage() {
       )}
 
       {/* ====================================================================== */}
-      {/* 2. CINEMATIC HERO BANNER (MATCHING VISUAL REFERENCE)                   */}
+      {/* 2. CINEMATIC HERO BANNER (AUTO-ROTATING 3 CAMPAIGNS, NO INNER BORDERS) */}
       {/* ====================================================================== */}
       <section className="relative bg-[#101010] text-[#FDFBF7] overflow-hidden border-b border-[#24221F]">
         {/* Subtle radial ambient golden glow */}
@@ -635,37 +770,52 @@ export default function LandingPage() {
         {/* Subtle grain/mesh texture accent */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,16,16,0.95)_0%,rgba(16,16,16,0.7)_50%,rgba(16,16,16,0.4)_100%)] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-12 lg:py-16 relative z-10">
-          <div className="grid grid-cols-12 gap-3 sm:gap-8 lg:gap-12 items-center">
-            
-            {/* Left Hero Content: Takes 7 cols on mobile, 7 on desktop */}
-            <div className="col-span-7 sm:col-span-7 lg:col-span-7 text-left space-y-2 sm:space-y-4">
-              
-              {/* Eyebrow */}
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-xs tracking-[0.16em] sm:tracking-[0.25em] font-bold uppercase text-[#C5A059] bg-[#1B1A17] px-2 py-0.5 sm:px-3 sm:py-1 border border-[#C5A059]/35">
-                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-[#E0C895] shrink-0" />
-                <span className="truncate">LUXURY • ELEGANCE • EVERYDAY YOU</span>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-10 lg:py-14 relative z-10">
+          
+          {/* Eyebrow - Clean luxury typography placed at top across hero per wireframe */}
+          <div className="mb-2 sm:mb-3.5 inline-flex items-center gap-1 sm:gap-1.5 text-[8.5px] sm:text-xs tracking-[0.16em] sm:tracking-[0.25em] font-bold uppercase text-[#C5A059]">
+            <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-[#E0C895] shrink-0" />
+            <span className="truncate">{HERO_CAMPAIGNS[activeSlide]?.eyebrow}</span>
+          </div>
 
-              {/* Headline */}
-              <h1 className="font-serif text-xl sm:text-3xl lg:text-5xl font-medium tracking-tight text-[#FDFBF7] leading-[1.12]">
-                Find Your <br />
-                <span className="italic font-normal text-[#E0C895]">Signature Scent</span>
-              </h1>
+          <div className="grid grid-cols-12 gap-2 sm:gap-6 lg:gap-10 items-center">
+            
+            {/* Left Hero Content: ~40% width (col-span-5) */}
+            <div className="col-span-5 sm:col-span-5 lg:col-span-5 text-left space-y-2 sm:space-y-4 pr-1 sm:pr-0">
+              
+              {/* Headline — Phase 2.6: Display final two words of each campaign on two separate lines */}
+              {(() => {
+                const { leadText, line2, line3 } = getHeadlineLines(
+                  HERO_CAMPAIGNS[activeSlide] ?? HERO_CAMPAIGNS[0]
+                );
+                return (
+                  <h1 className="font-serif text-lg sm:text-2xl md:text-3xl lg:text-5xl font-medium tracking-tight text-[#FDFBF7] leading-[1.12]">
+                    {leadText && (
+                      <span className="block text-[#FDFBF7]">{leadText}</span>
+                    )}
+                    <span className="block italic font-normal text-[#E0C895]">
+                      {line2}
+                    </span>
+                    <span className="block italic font-normal text-[#E0C895]">
+                      {line3}
+                    </span>
+                  </h1>
+                );
+              })()}
 
               {/* Description */}
-              <p className="text-[10px] sm:text-xs lg:text-sm text-[#B8B1A2] font-normal leading-relaxed line-clamp-3 sm:line-clamp-none max-w-md">
-                Discover iconic fragrances and explore distinctive accords for every occasion. Curated with precision from renowned independent houses and master perfumers.
+              <p className="text-[9.5px] sm:text-xs lg:text-sm text-[#B8B1A2] font-normal leading-relaxed line-clamp-3 sm:line-clamp-none max-w-xs min-h-[2.4rem] sm:min-h-0">
+                {HERO_CAMPAIGNS[activeSlide]?.description}
               </p>
 
               {/* Primary Action Button: [ SHOP NOW -> ] */}
-              <div className="pt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="pt-0.5 sm:pt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                 <Button
-                  onClick={() => scrollToSection("featured-fragrances-section")}
-                  className="h-8 sm:h-11 px-3.5 sm:px-8 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] font-bold text-[10px] sm:text-xs tracking-[0.16em] uppercase rounded-none transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  onClick={() => handleCampaignCta(HERO_CAMPAIGNS[activeSlide] ?? HERO_CAMPAIGNS[0])}
+                  className="h-7 sm:h-11 px-3 sm:px-8 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] font-bold text-[9px] sm:text-xs tracking-[0.14em] uppercase rounded-none transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-1 sm:gap-1.5"
                 >
-                  <span>SHOP NOW</span>
-                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span>{HERO_CAMPAIGNS[activeSlide]?.ctaText ?? "SHOP NOW"}</span>
+                  <ArrowRight className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                 </Button>
 
                 <Button
@@ -677,41 +827,32 @@ export default function LandingPage() {
                 </Button>
               </div>
 
-              {/* Interactive Carousel Indicators */}
-              <div className="pt-1 sm:pt-2 flex items-center gap-1.5">
-                {[0, 1, 2].map((idx) => (
+              {/* Auto-Rotating 3 Campaign Carousel Indicators (5-second cycle) */}
+              <div className="pt-0.5 sm:pt-1.5 flex items-center gap-1.5" aria-label="Hero Carousel Navigation">
+                {HERO_CAMPAIGNS.map((_, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setActiveSlide(idx)}
-                    className={`h-1 sm:h-1.5 transition-all rounded-full ${
-                      activeSlide === idx ? "w-4 sm:w-6 bg-[#C5A059]" : "w-1.5 sm:w-2 bg-[#3A3835]"
+                    className={`h-1 sm:h-1.5 transition-all duration-300 rounded-full ${
+                      activeSlide === idx ? "w-5 sm:w-7 bg-[#C5A059]" : "w-1.5 sm:w-2 bg-[#3A3835] hover:bg-[#5A554C]"
                     }`}
-                    aria-label={`Slide ${idx + 1}`}
+                    aria-label={`Go to hero slide ${idx + 1}`}
+                    aria-current={activeSlide === idx ? "true" : undefined}
                   />
                 ))}
               </div>
             </div>
 
-            {/* Right Hero Perfume Showcase: Takes 5 cols on mobile, 5 on desktop */}
-            <div className="col-span-5 sm:col-span-5 lg:col-span-5 flex justify-end">
-              <div className="relative w-full aspect-[4/5] sm:aspect-[4/3] rounded-xs overflow-hidden border border-[#C5A059]/40 bg-[#161616] shadow-2xl group">
+            {/* Right Hero Perfume Showcase: ~60% width (col-span-7) — LARGE, PROMINENT, CLEAR, NO INNER BORDER */}
+            <div className="col-span-7 sm:col-span-7 lg:col-span-7 flex justify-center sm:justify-end items-center">
+              <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] rounded-xs overflow-hidden flex items-center justify-center sm:justify-end">
                 <img
-                  src="/fragrance/hero-sauvage-million.svg"
-                  alt="Dior Sauvage and Paco Rabanne 1 Million luxury perfume flacons"
-                  className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                  key={HERO_CAMPAIGNS[activeSlide]?.image}
+                  src={HERO_CAMPAIGNS[activeSlide]?.image}
+                  alt={HERO_CAMPAIGNS[activeSlide]?.alt}
+                  className="w-full h-full object-contain object-center sm:object-right transition-all duration-700 animate-in fade-in drop-shadow-xl"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0E0E0E]/90 via-transparent to-transparent pointer-events-none" />
-                
-                {/* Flacon Badges */}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                  <span className="text-[7.5px] sm:text-[9px] tracking-[0.2em] uppercase text-[#C5A059] font-bold truncate">
-                    Signature Flacons
-                  </span>
-                  <span className="hidden sm:inline text-[8px] sm:text-[9px] tracking-widest uppercase bg-[#111111]/90 text-[#E0C895] px-1.5 py-0.5 border border-[#C5A059]/40">
-                    House Selection
-                  </span>
-                </div>
               </div>
             </div>
 

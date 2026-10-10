@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { toCategoryNavItem, getCategoryEmoji } from "./LandingPage";
+import {
+  toCategoryNavItem,
+  getCategoryEmoji,
+  HERO_CAMPAIGNS,
+  HERO_ROTATION_INTERVAL_MS,
+  getHeadlineLines,
+} from "./LandingPage";
 
 describe("customer category navigation", () => {
   it("uses the database category id and name, so newly returned categories need no frontend entry", () => {
@@ -102,6 +108,97 @@ describe("customer category navigation", () => {
       // Rotate: Back to Product 1
       currentIndex = (currentIndex + 1) % topThree.length;
       expect(topThree[currentIndex].name).toBe("Coleslaw");
+    });
+  });
+
+  describe("Phase 2.5 auto-rotating hero fragrance campaigns", () => {
+    it("contains exactly three hero campaign advertisements", () => {
+      expect(HERO_CAMPAIGNS).toHaveLength(3);
+    });
+
+    it("verifies all three campaigns have required luxury copy and valid flacon imagery", () => {
+      HERO_CAMPAIGNS.forEach((campaign) => {
+        expect(campaign.id).toBeGreaterThan(0);
+        expect(campaign.eyebrow).toBeTruthy();
+        expect(campaign.eyebrow.length).toBeGreaterThan(5);
+        expect(campaign.headlineFirst).toBeTruthy();
+        expect(campaign.headlineSecond).toBeTruthy();
+        expect(campaign.description).toBeTruthy();
+        expect(campaign.ctaText).toBeTruthy();
+        expect(campaign.image).toMatch(/^\/fragrance\/.*\.svg$/);
+        expect(campaign.alt).toBeTruthy();
+      });
+
+      // Verify campaign 1 contains the signature scent prompt
+      expect(HERO_CAMPAIGNS[0].eyebrow).toBe("LUXURY • ELEGANCE • EVERYDAY YOU");
+      expect(HERO_CAMPAIGNS[0].headlineFirst).toBe("Find Your");
+      expect(HERO_CAMPAIGNS[0].headlineSecond).toBe("Signature Scent");
+      expect(HERO_CAMPAIGNS[0].ctaText).toBe("SHOP NOW");
+      expect(HERO_CAMPAIGNS[0].image).toBe("/fragrance/hero-sauvage-million.svg");
+
+      // Verify campaign 2 contains niche & artisanal blend
+      expect(HERO_CAMPAIGNS[1].eyebrow).toBe("NICHE & ARTISANAL • PRIVATE BLEND");
+      expect(HERO_CAMPAIGNS[1].ctaText).toBe("EXPLORE NICHE");
+      expect(HERO_CAMPAIGNS[1].image).toBe("/fragrance/hero-fragrance.svg");
+
+      // Verify campaign 3 contains curated discovery set coffrets
+      expect(HERO_CAMPAIGNS[2].eyebrow).toBe("CURATED COFFRETS • DISCOVERY SETS");
+      expect(HERO_CAMPAIGNS[2].ctaText).toBe("DISCOVER SETS");
+      expect(HERO_CAMPAIGNS[2].image).toBe("/fragrance/discovery-set.svg");
+    });
+
+    it("rotates sequentially through all 3 campaigns and wraps back to index 0", () => {
+      let activeSlide = 0;
+      expect(HERO_CAMPAIGNS[activeSlide].id).toBe(1);
+
+      // Advance by 1 step (simulating 3s interval trigger)
+      activeSlide = (activeSlide + 1) % HERO_CAMPAIGNS.length;
+      expect(activeSlide).toBe(1);
+      expect(HERO_CAMPAIGNS[activeSlide].id).toBe(2);
+
+      // Advance by 1 step
+      activeSlide = (activeSlide + 1) % HERO_CAMPAIGNS.length;
+      expect(activeSlide).toBe(2);
+      expect(HERO_CAMPAIGNS[activeSlide].id).toBe(3);
+
+      // Advance by 1 step (wraps back to 0)
+      activeSlide = (activeSlide + 1) % HERO_CAMPAIGNS.length;
+      expect(activeSlide).toBe(0);
+      expect(HERO_CAMPAIGNS[activeSlide].id).toBe(1);
+    });
+  });
+
+  describe("Phase 2.6 carousel timing, headline formatting and layout scale", () => {
+    it("sets automatic slide rotation duration to exactly 5 seconds (5000ms)", () => {
+      expect(HERO_ROTATION_INTERVAL_MS).toBe(5000);
+    });
+
+    it("displays the final two words of each campaign headline on two separate lines", () => {
+      // Campaign 1: "Find Your Signature Scent"
+      const c1 = getHeadlineLines(HERO_CAMPAIGNS[0]);
+      expect(c1.leadText).toBe("Find Your");
+      expect(c1.line2).toBe("Signature");
+      expect(c1.line3).toBe("Scent");
+
+      // Campaign 2: "Haute Parfumerie & Artisanal Extraits"
+      const c2 = getHeadlineLines(HERO_CAMPAIGNS[1]);
+      expect(c2.leadText).toBe("Haute Parfumerie &");
+      expect(c2.line2).toBe("Artisanal");
+      expect(c2.line3).toBe("Extraits");
+
+      // Campaign 3: "Curated Luxury Discovery Sets"
+      const c3 = getHeadlineLines(HERO_CAMPAIGNS[2]);
+      expect(c3.leadText).toBe("Curated Luxury");
+      expect(c3.line2).toBe("Discovery");
+      expect(c3.line3).toBe("Sets");
+    });
+
+    it("ensures each campaign has explicit final two word properties matching headlineSecond", () => {
+      HERO_CAMPAIGNS.forEach((campaign) => {
+        expect(campaign.headlineWord1).toBeTruthy();
+        expect(campaign.headlineWord2).toBeTruthy();
+        expect(`${campaign.headlineWord1} ${campaign.headlineWord2}`).toBe(campaign.headlineSecond);
+      });
     });
   });
 });
