@@ -15,10 +15,14 @@ import { customerRouter } from "./customerRouter";
 import { deliveryZoneRouter } from "./deliveryZoneRouter";
 import { gstRouter } from "./gstRouter";
 import { shippingRouter } from "./shippingRouter";
+import { superMasterRouter } from "./superMasterRouter";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
+
+  // Level 1: SaaS Super Master Router
+  superMaster: superMasterRouter,
 
   // FreshFlow B2B Marketplace Routers
   product: productRouter,

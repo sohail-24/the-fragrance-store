@@ -4,10 +4,11 @@ import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { isOwner } from "@/lib/roles";
+import { isOwner, isSuperMaster } from "@/lib/roles";
 
 // Statically imported pages to prevent dynamic module import failures and network skew
 import LandingPage from "./pages/LandingPage";
+import SuperMasterDashboard from "./pages/SuperMasterDashboard";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import AddProduct from "./pages/AddProduct";
@@ -90,7 +91,32 @@ function OwnerRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isOwner(user) && user?.role !== "admin") {
+  if (!isOwner(user) && user?.role !== "admin" && !isSuperMaster(user)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
+function SuperMasterRoute({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!isAuthenticated) {
+    const returnTo = `${location.pathname}${location.search}`;
+    return (
+      <Navigate
+        to={`/admin/login?returnTo=${encodeURIComponent(returnTo)}`}
+        replace
+      />
+    );
+  }
+
+  if (!isSuperMaster(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -111,6 +137,22 @@ function AppRoutes() {
 
         {/* Dashboard routes with layout */}
         <Route element={<AppLayout />}>
+          <Route
+            path="/super-master"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/tenants"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

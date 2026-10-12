@@ -2,9 +2,9 @@ import { getDb } from "./connection";
 import { companies, type Company } from "@db/schema";
 import { eq, like, and, or } from "drizzle-orm";
 
-export const DEFAULT_BUSINESS_NAME = "Tex’s Chicken & Burgers";
-export const DEFAULT_BUSINESS_SLUG = "texs-chicken-and-burgers";
-export const DEFAULT_BUSINESS_TAGLINE = "Worth Every Bite";
+export const DEFAULT_BUSINESS_NAME = "The Fragrance Store — House of Brands";
+export const DEFAULT_BUSINESS_SLUG = "the-fragrance-store";
+export const DEFAULT_BUSINESS_TAGLINE = "House of Brands — Luxury & Niche Fragrances";
 
 let cachedDefaultBusiness: Company | null = null;
 
@@ -12,12 +12,15 @@ export async function ensureDefaultBusiness(): Promise<Company> {
   const db = getDb();
 
   try {
-    // 1. Check if default company already exists by slug or name
+    // 1. Check if default company already exists by slug or name, or legacy placeholders
     let defaultCompany = await db.query.companies.findFirst({
       where: or(
         eq(companies.slug, DEFAULT_BUSINESS_SLUG),
+        eq(companies.slug, "texs-chicken-and-burgers"),
         eq(companies.slug, "texs-chicken-burgers"),
-        eq(companies.name, DEFAULT_BUSINESS_NAME)
+        eq(companies.slug, "amfruits-warehouse"),
+        eq(companies.name, DEFAULT_BUSINESS_NAME),
+        eq(companies.id, 1)
       ),
     });
 
@@ -35,7 +38,13 @@ export async function ensureDefaultBusiness(): Promise<Company> {
             slug: DEFAULT_BUSINESS_SLUG,
             description: DEFAULT_BUSINESS_TAGLINE,
             type: "supplier",
-            logo: "/branding/logo.png",
+            logo: "/fragrance/brand-mark.svg",
+            email: "contact@thefragrancestore.com",
+            phone: "+91 98765 43210",
+            addressLine1: "Flagship Boutique",
+            city: "Mumbai",
+            state: "Maharashtra",
+            country: "India",
             isActive: true,
             isVerified: true,
             updatedAt: new Date(),
@@ -50,37 +59,7 @@ export async function ensureDefaultBusiness(): Promise<Company> {
       if (defaultCompany) return defaultCompany;
     }
 
-    // 2. Check if legacy placeholder company (e.g. id 1 or 'amfruits-warehouse') exists to migrate
-    const legacyCompany = await db.query.companies.findFirst({
-      where: or(
-        eq(companies.slug, "amfruits-warehouse"),
-        eq(companies.id, 1)
-      ),
-    });
-
-    if (legacyCompany) {
-      await db
-        .update(companies)
-        .set({
-          name: DEFAULT_BUSINESS_NAME,
-          slug: DEFAULT_BUSINESS_SLUG,
-          description: DEFAULT_BUSINESS_TAGLINE,
-          type: "supplier",
-          logo: "/branding/logo.png",
-          isActive: true,
-          isVerified: true,
-          updatedAt: new Date(),
-        })
-        .where(eq(companies.id, legacyCompany.id));
-
-      const updated = await db.query.companies.findFirst({
-        where: eq(companies.id, legacyCompany.id),
-      });
-      cachedDefaultBusiness = updated ?? legacyCompany;
-      return cachedDefaultBusiness!;
-    }
-
-    // 3. Otherwise insert fresh default business
+    // 2. Otherwise insert fresh default business
     const [created] = await db
       .insert(companies)
       .values({
@@ -88,10 +67,13 @@ export async function ensureDefaultBusiness(): Promise<Company> {
         slug: DEFAULT_BUSINESS_SLUG,
         type: "supplier",
         description: DEFAULT_BUSINESS_TAGLINE,
-        logo: "/branding/logo.png",
-        email: "contact@texschickenandburgers.com",
-        phone: "+1 (212) 555-0199",
-        addressLine1: "Tex’s Kitchen",
+        logo: "/fragrance/brand-mark.svg",
+        email: "contact@thefragrancestore.com",
+        phone: "+91 98765 43210",
+        addressLine1: "Flagship Boutique",
+        city: "Mumbai",
+        state: "Maharashtra",
+        country: "India",
         isVerified: true,
         isActive: true,
       })
@@ -107,16 +89,16 @@ export async function ensureDefaultBusiness(): Promise<Company> {
       slug: DEFAULT_BUSINESS_SLUG,
       type: "supplier",
       description: DEFAULT_BUSINESS_TAGLINE,
-      logo: "/branding/logo.png",
-      website: null,
-      email: "contact@texschickenandburgers.com",
-      phone: "+1 (212) 555-0199",
-      addressLine1: "Tex’s Kitchen",
+      logo: "/fragrance/brand-mark.svg",
+      website: "https://thefragrancestore.com",
+      email: "contact@thefragrancestore.com",
+      phone: "+91 98765 43210",
+      addressLine1: "Flagship Boutique",
       addressLine2: null,
-      city: "New York",
-      state: "NY",
-      postalCode: "10001",
-      country: "USA",
+      city: "Mumbai",
+      state: "Maharashtra",
+      postalCode: "400001",
+      country: "India",
       taxId: null,
       businessLicense: null,
       isVerified: true,

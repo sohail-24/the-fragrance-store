@@ -1,8 +1,9 @@
 import { Link } from "react-router";
-import { Home, Info, LayoutGrid, ShoppingCart, Sparkles, UserRound } from "lucide-react";
+import { Home, Info, LayoutGrid, ShoppingCart, Sparkles, UserRound, ShieldCheck } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/lib/guestCart";
+import { isSuperMaster } from "@/lib/roles";
 
 interface CustomerBottomNavProps {
   active?: "home" | "shop" | "categories" | "cart" | "account" | "about" | "none";
@@ -158,29 +159,39 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
           </span>
         </Link>
 
-        {/* 5. Account */}
+        {/* 5. Account / Super Master */}
         <Link
-          to={isAuthenticated ? "/dashboard" : "/admin/login"}
+          to={isSuperMaster(user) ? "/super-master" : isAuthenticated ? "/dashboard" : "/admin/login"}
           id="mobile-nav-account"
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
             active === "account"
               ? "text-[#C5A059] font-semibold"
+              : isSuperMaster(user)
+              ? "text-amber-400 font-semibold"
               : "text-[#9E978C] hover:text-[#FDFBF7] font-normal"
           }`}
         >
-          <UserRound
-            className={`h-4.5 w-4.5 transition-all ${
-              active === "account"
-                ? "text-[#C5A059] scale-105"
-                : "text-[#9E978C] group-hover:text-[#FDFBF7]"
-            }`}
-          />
+          {isSuperMaster(user) ? (
+            <ShieldCheck className="h-4.5 w-4.5 text-amber-400" />
+          ) : (
+            <UserRound
+              className={`h-4.5 w-4.5 transition-all ${
+                active === "account"
+                  ? "text-[#C5A059] scale-105"
+                  : "text-[#9E978C] group-hover:text-[#FDFBF7]"
+              }`}
+            />
+          )}
           <span
             className={`text-[9.5px] mt-1 tracking-wider uppercase leading-none font-sans ${
-              active === "account" ? "font-semibold text-[#C5A059]" : ""
+              active === "account"
+                ? "font-semibold text-[#C5A059]"
+                : isSuperMaster(user)
+                ? "font-semibold text-amber-400"
+                : ""
             }`}
           >
-            Account
+            {isSuperMaster(user) ? "Console" : "Account"}
           </span>
         </Link>
       </div>

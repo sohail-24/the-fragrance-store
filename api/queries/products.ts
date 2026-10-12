@@ -48,6 +48,7 @@ export function buyerProductVisibilityConditions(): SQL[] {
     eq(products.marketplaceVisible, true),
     eq(inventory.isActive, true),
     eq(categories.isActive, true),
+    eq(companies.isActive, true),
     gte(inventory.quantityAvailable, products.minimumOrderQuantity),
   ];
 }
@@ -531,6 +532,10 @@ export async function findBuyerProductById(id: number) {
       categories,
       eq(products.categoryId, categories.id),
     )
+    .leftJoin(
+      companies,
+      eq(products.supplierId, companies.id),
+    )
     .where(and(eq(products.id, id), ...buyerProductVisibilityConditions()))
     .limit(1);
 
@@ -610,6 +615,10 @@ export async function countProducts(filters?: {
     .innerJoin(
       categories,
       eq(products.categoryId, categories.id),
+    )
+    .leftJoin(
+      companies,
+      eq(products.supplierId, companies.id),
     )
     .where(and(...conditions));
 

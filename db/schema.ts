@@ -127,6 +127,11 @@ export const shippingMethodStatusEnum = pgEnum("shipping_method_status", [
   "inactive",
 ]);
 export const otpPurposeEnum = pgEnum("purpose", ["login"]);
+export const tenantMembershipRoleEnum = pgEnum("tenant_membership_role", [
+  "owner",
+  "admin",
+  "staff",
+]);
 
 // ─────────────────────────────────────────────────────────────
 // USERS — Extended from auth with company association
@@ -906,4 +911,34 @@ export const productImages = pgTable(
 
 export type ProductImage = typeof productImages.$inferSelect;
 export type InsertProductImage = typeof productImages.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// TENANT MEMBERSHIPS — Multi-tenant user and role association
+// ─────────────────────────────────────────────────────────────
+export const tenantMemberships = pgTable(
+  "tenant_memberships",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: bigint("userId", { mode: "number" }).notNull(),
+    companyId: bigint("companyId", { mode: "number" }).notNull(),
+    role: tenantMembershipRoleEnum("role").default("owner").notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    userCompanyIdx: uniqueIndex("tenant_membership_user_company_idx").on(
+      table.userId,
+      table.companyId
+    ),
+    userIdx: index("tenant_membership_user_idx").on(table.userId),
+    companyIdx: index("tenant_membership_company_idx").on(table.companyId),
+  })
+);
+
+export type TenantMembership = typeof tenantMemberships.$inferSelect;
+export type InsertTenantMembership = typeof tenantMemberships.$inferInsert;
 

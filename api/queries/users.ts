@@ -3,6 +3,7 @@ import * as schema from "@db/schema";
 import type { InsertUser } from "@db/schema";
 import { getDb } from "./connection";
 import { env } from "../lib/env";
+import { upsertTenantMembership } from "./memberships";
 
 export async function findUserById(id: number) {
   const rows = await getDb()
@@ -106,11 +107,25 @@ export async function upsertUser(data: InsertUser) {
     updateSet.role = "admin";
   }
 
-  await getDb()
+  const [savedUser] = await getDb()
     .insert(schema.users)
     .values(values)
     .onConflictDoUpdate({
       target: schema.users.unionId,
       set: updateSet,
-    });
+    })
+    .returning();
+
+  if (savedUser?.companyId) {
+    try {
+      await upsertTenantMembership({
+        userId: savedUser.id,
+        companyId: savedUser.companyId,
+        role: savedUser.role === "admin" ? "admin" : "owner",
+        isActive: savedUser.isActive,
+      });
+    } catch {
+      // Non-fatal if table not yet migrated
+    }
+  }
 }

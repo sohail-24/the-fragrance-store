@@ -66,7 +66,8 @@ try {
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    service: "Tex's Chicken & Burgers",
+    service: "The Fragrance Store — House of Brands",
+    platform: "SaaS Multi-Tenant Level 1",
     version: pkgVersion,
     timestamp: new Date().toISOString(),
   });
@@ -261,7 +262,9 @@ export async function ensureDatabaseReady(): Promise<void> {
 
       await migrateLocalImagesToDurable();
     } catch (err: any) {
-      console.warn("[FreshFlow] Database initialization warning:", err?.message);
+      console.warn("[FreshFlow] Database initialization warning, falling back to mock mode:", err?.message);
+      const { setUseMock } = await import("./queries/connection");
+      setUseMock(true);
     }
   })();
   return dbInitializationPromise;

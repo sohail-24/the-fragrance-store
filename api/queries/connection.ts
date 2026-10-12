@@ -54,4 +54,8 @@ export function getDb(): any {
   return instance;
 }
 
+export function setUseMock(val: boolean) {
+  useMock = val;
+}
+
 export { mockDbInstance };

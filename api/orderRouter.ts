@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { createRouter, authedQuery, ownerQuery, publicQuery } from "./middleware";
 import { TRPCError } from "@trpc/server";
-import { isOwner } from "@contracts/roles";
+import { isOwner, isSuperMaster } from "@contracts/roles";
 import { normalizeIndianMobileNumber } from "./auth/mobile";
+import { env } from "./lib/env";
 import {
   cancelOrder,
   createOrderFromCart,
@@ -38,10 +39,12 @@ function canAccessOrderDetails(input: {
   user: { role: string; email?: string | null; companyId?: number | null };
   order: { buyerId: number; supplierId: number };
 }) {
-  if (input.user.role === "admin" || isOwner(input.user)) {
+  // Platform Super Master has cross-tenant oversight
+  if (isSuperMaster(input.user, env.superMasterEmail)) {
     return true;
   }
 
+  // Tenant-isolated: buyer or supplier can view their own tenant order
   return (
     !!input.user.companyId &&
     (input.order.buyerId === input.user.companyId ||
@@ -53,7 +56,7 @@ function canManageOrder(input: {
   user: { role: string; email?: string | null; companyId?: number | null };
   order: { supplierId: number };
 }) {
-  if (input.user.role === "admin" || isOwner(input.user)) return true;
+  if (isSuperMaster(input.user, env.superMasterEmail)) return true;
   return input.user.companyId === input.order.supplierId;
 }
 
@@ -167,7 +170,10 @@ export const orderRouter = createRouter({
       };
 
       if (requestedType === "supplier") {
-        return findOrdersBySupplier(ctx.user.role === "admin" || isOwner(ctx.user) ? undefined : companyId, filters);
+        const isMaster = isSuperMaster(ctx.user, env.superMasterEmail);
+        // Ordinary shop owners / admins are strictly filtered to their own companyId;
+        // only the Super Master can view all supplier orders platform-wide.
+        return findOrdersBySupplier(isMaster ? undefined : companyId, filters);
       }
       return findOrdersByBuyer(companyId, filters);
     }),
@@ -324,6 +330,12 @@ export const orderRouter = createRouter({
         const product = await findBuyerProductById(item.productId);
         if (!product) continue;
         if (supplierId === null) supplierId = product.supplierId;
+        if (product.supplierId !== supplierId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Orders can only contain fragrances from one brand boutique.",
+          });
+        }
         gstItems.push({
           productId: product.id,
           categoryId: product.categoryId,
@@ -478,6 +490,12 @@ export const orderRouter = createRouter({
         if (supplierId === null) {
           supplierId = product.supplierId || platformCompanyId;
           currency = product.currency || "USD";
+        }
+        if (product.supplierId && product.supplierId !== supplierId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Orders can only contain fragrances from one brand boutique.",
+          });
         }
         if (input.supplierId && input.supplierId !== product.supplierId) {
           throw new TRPCError({

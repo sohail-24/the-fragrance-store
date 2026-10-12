@@ -11,7 +11,8 @@ describe("buyer product visibility", () => {
     expect(query.sql).toContain('"products"."marketplaceVisible" = $2');
     expect(query.sql).toContain('"inventory"."isActive" = $3');
     expect(query.sql).toContain('"categories"."isActive" = $4');
+    expect(query.sql).toContain('"companies"."isActive" = $5');
     expect(query.sql).toContain('"inventory"."quantityAvailable" >= "products"."minimumOrderQuantity"');
-    expect(query.params).toEqual(["active", true, true, true]);
+    expect(query.params).toEqual(["active", true, true, true, true]);
   });
 });

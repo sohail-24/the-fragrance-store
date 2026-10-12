@@ -39,6 +39,7 @@ import {
   BarChart3,
   Bell,
   Boxes,
+  Building2,
   ClipboardList,
   Command,
   FolderTree,
@@ -53,6 +54,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingBag,
   ShoppingCart,
   SlidersHorizontal,
@@ -115,6 +117,42 @@ const roleNavigation: Record<AppRole, NavGroup[]> = {
         { icon: Gift, label: "Coupons", path: "/coupons" },
         { icon: BarChart3, label: "Reports", path: "/reports" },
         { icon: Bell, label: "Notifications", path: "/notifications" },
+        { icon: User, label: "Staff", path: "/staff" },
+      ],
+    },
+    {
+      label: "Administration",
+      items: [
+        { icon: Settings, label: "Settings", path: "/settings" },
+        { icon: Plus, label: "Add Product", path: "/products/new" },
+        { icon: User, label: "Profile", path: "/profile" },
+      ],
+    },
+  ],
+  super_master: [
+    {
+      label: "SaaS Super Master",
+      items: [
+        { icon: ShieldCheck, label: "Super Master Console", path: "/super-master" },
+        { icon: Building2, label: "Brand Tenants", path: "/super-master" },
+        { icon: BarChart3, label: "Global SaaS Metrics", path: "/reports" },
+      ],
+    },
+    {
+      label: "House Operations",
+      items: [
+        { icon: LayoutDashboard, label: "Store Dashboard", path: "/dashboard" },
+        { icon: Package, label: "Product Catalog", path: "/products" },
+        { icon: FolderTree, label: "Categories", path: "/categories" },
+        { icon: Warehouse, label: "Inventory", path: "/inventory" },
+        { icon: Warehouse, label: "Warehouse", path: "/warehouse" },
+        { icon: ClipboardList, label: "Orders", path: "/orders" },
+        { icon: ReceiptText, label: "Invoices", path: "/invoices" },
+        { icon: Users, label: "Customers", path: "/customers" },
+        { icon: Truck, label: "Delivery Zones", path: "/delivery-zones" },
+        { icon: ReceiptText, label: "GST Rules", path: "/gst-rules" },
+        { icon: SlidersHorizontal, label: "Shipping Rules", path: "/shipping-rules" },
+        { icon: Gift, label: "Coupons", path: "/coupons" },
         { icon: User, label: "Staff", path: "/staff" },
       ],
     },
@@ -218,7 +256,10 @@ function AppLayoutContent() {
     <>
       <Sidebar collapsible="icon" className="z-40 border-sidebar-border">
         <SidebarHeader className="h-16 border-b border-sidebar-border px-3">
-          <Link to={role === "buyer" ? "/" : "/dashboard"} className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1.5">
+          <Link
+            to={role === "buyer" ? "/" : role === "super_master" ? "/super-master" : "/dashboard"}
+            className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1.5"
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black border border-[#C5A059]/40 overflow-hidden shadow-sm p-0.5">
               <img
                 src="/fragrance/brand-mark.svg"
@@ -320,6 +361,15 @@ function AppLayoutContent() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            {role === "super_master" && (
+              <Link
+                to="/super-master"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors shadow-xs"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                <span>Super Master Console</span>
+              </Link>
+            )}
             <Badge variant="outline" className="hidden h-8 items-center gap-1 rounded-md px-2 text-xs sm:flex">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               INR
@@ -346,10 +396,17 @@ function AppLayoutContent() {
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-card border-t pb-safe md:hidden shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.05)]">
-          <Link to={role === "buyer" ? "/" : "/dashboard"} className={`flex flex-col items-center gap-1 ${isActive(role === "buyer" ? "/" : "/dashboard") ? "text-primary" : "text-muted-foreground"}`}>
-            <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Home</span>
-          </Link>
+          {role === "super_master" ? (
+            <Link to="/super-master" className={`flex flex-col items-center gap-1 ${isActive("/super-master") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+              <ShieldCheck className="h-5 w-5" />
+              <span className="text-[10px] font-medium">Console</span>
+            </Link>
+          ) : (
+            <Link to={role === "buyer" ? "/" : "/dashboard"} className={`flex flex-col items-center gap-1 ${isActive(role === "buyer" ? "/" : "/dashboard") ? "text-primary" : "text-muted-foreground"}`}>
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="text-[10px] font-medium">Home</span>
+            </Link>
+          )}
           <Link to="/products" className={`flex flex-col items-center gap-1 ${isActive("/products") ? "text-primary" : "text-muted-foreground"}`}>
             <ShoppingBag className="h-5 w-5" />
             <span className="text-[10px] font-medium">Catalog</span>

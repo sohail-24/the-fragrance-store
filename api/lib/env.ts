@@ -13,6 +13,7 @@ export const env = {
   jwtRefreshSecret: getEnv("JWT_REFRESH_SECRET", "freshflow-jwt-refresh-secret-32-chars-long!"),
   mockOtpCode: process.env.MOCK_OTP_CODE ?? "123456",
   ownerEmail: process.env.OWNER_EMAIL ?? "owner@freshflow.com",
+  superMasterEmail: (process.env.SUPER_MASTER_EMAIL || "mdsohail88008@gmail.com").trim().toLowerCase(),
   adminOrderEmail: process.env.ADMIN_ORDER_EMAIL ?? process.env.OWNER_EMAIL ?? "orders@freshflow.com",
   appUrl: process.env.APP_URL ?? "",
   smtpHost: process.env.SMTP_HOST ?? "",

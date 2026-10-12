@@ -26,6 +26,7 @@ import { parseProductOptions } from "@/types";
 import { Button } from "@/components/ui/button";
 import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 import { resolveProductImageUrl } from "@/lib/image";
+import { isSuperMaster } from "@/lib/roles";
 
 export type MarketplaceProduct = {
   id: number;
@@ -536,10 +537,32 @@ export default function LandingPage() {
               </Link>
             )}
 
+            {/* Super Master Console Navigation Entry for authorized Super Master or directs unauthenticated to login */}
+            {isSuperMaster(user) ? (
+              <Link
+                to="/super-master"
+                id="header-super-master-link"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors mr-1 shadow-xs"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                <span>Super Master Console</span>
+              </Link>
+            ) : !isAuthenticated ? (
+              <Link
+                to="/admin/login?returnTo=%2Fsuper-master"
+                id="header-super-master-link"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neutral-900/80 border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-medium tracking-wide transition-colors mr-1"
+                title="Sign in to Super Master Console"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                <span>Super Master Console</span>
+              </Link>
+            ) : null}
+
             {/* Desktop Account Link */}
             {isAuthenticated ? (
               <Link
-                to="/dashboard"
+                to={isSuperMaster(user) ? "/super-master" : "/dashboard"}
                 className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
               >
                 <UserRound className="h-4 w-4 text-[#C5A059]" />
@@ -748,6 +771,27 @@ export default function LandingPage() {
                   >
                     {isAuthenticated ? "My Dashboard" : "Account / Sign In"}
                   </Link>
+                  {isSuperMaster(user) ? (
+                    <Link
+                      to="/super-master"
+                      id="mobile-drawer-super-master-link"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="py-1 text-amber-400 font-semibold flex items-center gap-1.5"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-amber-400" />
+                      <span>Super Master Console</span>
+                    </Link>
+                  ) : !isAuthenticated ? (
+                    <Link
+                      to="/admin/login?returnTo=%2Fsuper-master"
+                      id="mobile-drawer-super-master-link"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="py-1 text-amber-400/90 font-medium flex items-center gap-1.5"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-amber-400" />
+                      <span>Super Master Console</span>
+                    </Link>
+                  ) : null}
                 </div>
               </nav>
             </div>
@@ -1294,6 +1338,20 @@ export default function LandingPage() {
                 <li><Link to="/products" className="hover:text-[#FDFBF7]">Shop All</Link></li>
                 <li><Link to="/cart" className="hover:text-[#FDFBF7]">Cart ({cartCount})</Link></li>
                 <li><Link to="/about" className="hover:text-[#FDFBF7]">About Store</Link></li>
+                {isSuperMaster(user) ? (
+                  <li>
+                    <Link to="/super-master" className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" />
+                      Super Master Console
+                    </Link>
+                  </li>
+                ) : (
+                  <li>
+                    <Link to="/admin/login" className="hover:text-[#FDFBF7]">
+                      Staff / Admin Sign In
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
 
