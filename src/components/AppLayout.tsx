@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { LOGIN_PATH } from "@/const";
-import { getAppRole, getRoleLabel, type AppRole } from "@/lib/roles";
+import { getAppRole, getRoleLabel, isSuperMaster, type AppRole } from "@/lib/roles";
 import { trpc } from "@/providers/trpc";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,8 @@ import {
   ClipboardList,
   Command,
   CreditCard,
+  Crown,
+  ExternalLink,
   FolderTree,
   Gift,
   Globe,
@@ -83,6 +85,22 @@ type NavGroup = {
   label: string;
   items: NavItem[];
 };
+
+export const superMasterNavigation: NavGroup[] = [
+  {
+    label: "Platform Control Center",
+    items: [
+      { icon: LayoutDashboard, label: "Platform Overview", path: "/super-master" },
+      { icon: Globe, label: "Websites", path: "/super-master/websites" },
+      { icon: Users, label: "Shop Owners", path: "/super-master/owners" },
+      { icon: BarChart3, label: "Analytics & Usage", path: "/super-master/analytics" },
+      { icon: CreditCard, label: "Subscriptions", path: "/super-master/subscriptions" },
+      { icon: Activity, label: "Monitoring & Errors", path: "/super-master/monitoring" },
+      { icon: ShieldAlert, label: "Audit Logs", path: "/super-master/audit-logs" },
+      { icon: Settings, label: "Platform Settings", path: "/super-master/settings" },
+    ],
+  },
+];
 
 const roleNavigation: Record<AppRole, NavGroup[]> = {
   buyer: [
@@ -133,34 +151,10 @@ const roleNavigation: Record<AppRole, NavGroup[]> = {
       ],
     },
   ],
-  super_master: [
-    {
-      label: "Platform Governance",
-      items: [
-        { icon: LayoutDashboard, label: "Platform Overview", path: "/super-master" },
-        { icon: Globe, label: "Websites", path: "/super-master/websites" },
-        { icon: Users, label: "Shop Owners", path: "/super-master/owners" },
-      ],
-    },
-    {
-      label: "Intelligence & Finance",
-      items: [
-        { icon: BarChart3, label: "Analytics & Usage", path: "/super-master/analytics" },
-        { icon: CreditCard, label: "Subscriptions", path: "/super-master/subscriptions" },
-      ],
-    },
-    {
-      label: "System Health & Config",
-      items: [
-        { icon: Activity, label: "Monitoring & Errors", path: "/super-master/monitoring" },
-        { icon: ShieldAlert, label: "Audit Logs", path: "/super-master/audit-logs" },
-        { icon: Settings, label: "Platform Settings", path: "/super-master/settings" },
-      ],
-    },
-  ],
+  super_master: superMasterNavigation,
   platform_admin: [
     {
-      label: "Platform",
+      label: "Operations",
       items: [
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
         { icon: Package, label: "Product Catalog", path: "/products" },
@@ -234,6 +228,14 @@ function AppLayoutContent() {
     .slice(0, 2)
     .toUpperCase();
 
+  const isSuperMasterConsole = location.pathname.startsWith("/super-master");
+  const isSuperMasterUser = isSuperMaster(user);
+  const showSuperMasterNav = isSuperMasterConsole || isSuperMasterUser;
+
+  const navGroups = showSuperMasterNav
+    ? superMasterNavigation
+    : roleNavigation[role] || roleNavigation.business_owner;
+
   if (!user) {
     return <Outlet />;
   }
@@ -250,7 +252,7 @@ function AppLayoutContent() {
       <Sidebar collapsible="icon" className="z-40 border-sidebar-border">
         <SidebarHeader className="h-16 border-b border-sidebar-border px-3">
           <Link
-            to={role === "buyer" ? "/" : role === "super_master" ? "/super-master" : "/dashboard"}
+            to={showSuperMasterNav ? "/super-master" : role === "buyer" ? "/" : "/dashboard"}
             className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1.5"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black border border-[#C5A059]/40 overflow-hidden shadow-sm p-0.5">
@@ -263,10 +265,10 @@ function AppLayoutContent() {
             {!isCollapsed && (
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold tracking-wide text-sidebar-foreground">
-                  {businessName}
+                  {showSuperMasterNav ? "The Fragrance Store" : businessName}
                 </div>
                 <div className="truncate text-[11px] text-[#C5A059]">
-                  {getRoleLabel(role)}
+                  {showSuperMasterNav ? "SaaS Platform Control Center" : getRoleLabel(role)}
                 </div>
               </div>
             )}
@@ -274,7 +276,7 @@ function AppLayoutContent() {
         </SidebarHeader>
 
         <SidebarContent className="px-2 py-3">
-          {roleNavigation[role].map((group) => (
+          {navGroups.map((group) => (
             <SidebarGroup key={group.label} className="px-0 py-1">
               <SidebarGroupLabel className="px-3 text-[11px] uppercase tracking-wide">
                 {group.label}
@@ -312,9 +314,9 @@ function AppLayoutContent() {
         <SidebarFooter className="border-t border-sidebar-border p-3">
           {user ? (
             <UserMenu
-              initials={initials || "TC"}
-              userName={user.name ?? "Tex’s Admin"}
-              userDetail={user.email ?? user.phone ?? getRoleLabel(role)}
+              initials={initials || "SM"}
+              userName={user.name ?? (showSuperMasterNav ? "Super Master" : "Boutique Admin")}
+              userDetail={user.email ?? user.phone ?? (showSuperMasterNav ? "SaaS Platform Owner" : getRoleLabel(role))}
               role={role}
               onLogout={logout}
             />
@@ -344,8 +346,14 @@ function AppLayoutContent() {
           <div className="relative hidden min-w-[260px] max-w-xl flex-1 md:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              aria-label="Search Tex’s Chicken & Burgers"
-              placeholder={role === "buyer" ? "Search dishes, platters, gyros, drinks..." : "Search menu items, orders, inventory..."}
+              aria-label="Search The Fragrance Store"
+              placeholder={
+                showSuperMasterNav
+                  ? "Search platform websites, owners, audit events..."
+                  : role === "buyer"
+                  ? "Search fragrances, designer brands, notes..."
+                  : "Search boutique products, orders, inventory..."
+              }
               className="h-9 border-input bg-card pl-9 pr-10"
             />
             <div className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground lg:flex">
@@ -354,15 +362,22 @@ function AppLayoutContent() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            {role === "super_master" && (
-              <Link
-                to="/super-master"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors shadow-xs"
-              >
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
-                <span>Super Master Console</span>
-              </Link>
-            )}
+            {showSuperMasterNav ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 text-xs font-semibold tracking-wide shadow-xs">
+                  <Crown className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Platform Console</span>
+                </div>
+                <Link
+                  to="/?storefront=true"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-neutral-400 hover:text-amber-400 hover:bg-neutral-900 border border-neutral-800 rounded transition-colors"
+                  title="Preview Customer Storefront"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Storefront</span>
+                </Link>
+              </div>
+            ) : null}
             <Badge variant="outline" className="hidden h-8 items-center gap-1 rounded-md px-2 text-xs sm:flex">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               INR
@@ -373,9 +388,9 @@ function AppLayoutContent() {
               <span className="sr-only">Notifications</span>
             </Button>
             <UserMenu
-              initials={initials || "FF"}
-              userName={user?.name ?? "Guest"}
-              userDetail={user?.email ?? user?.phone ?? "Not signed in"}
+              initials={initials || "SM"}
+              userName={user?.name ?? (showSuperMasterNav ? "Super Master" : "Boutique Admin")}
+              userDetail={user?.email ?? user?.phone ?? (showSuperMasterNav ? "SaaS Platform Owner" : getRoleLabel(role))}
               role={role}
               onLogout={logout}
               compact
@@ -384,12 +399,23 @@ function AppLayoutContent() {
         </header>
 
         <main className="min-w-0 max-w-full flex-1 px-4 py-5 pb-24 md:pb-5 sm:px-6 lg:px-8 overflow-x-hidden">
+          {isSuperMasterUser && !isSuperMasterConsole && (
+            <div className="mb-4 flex items-center justify-between rounded-lg bg-amber-500/10 border border-amber-500/30 px-3.5 py-2 text-xs text-amber-300">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>Viewing Boutique Context. Platform governance remains in the Central Console.</span>
+              </div>
+              <Link to="/super-master" className="font-semibold underline hover:text-amber-200">
+                Platform Console &rarr;
+              </Link>
+            </div>
+          )}
           <Outlet />
         </main>
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-card border-t pb-safe md:hidden shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.05)]">
-          {role === "super_master" ? (
+          {showSuperMasterNav ? (
             <>
               <Link to="/super-master" className={`flex flex-col items-center gap-1 ${location.pathname === "/super-master" ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
                 <LayoutDashboard className="h-5 w-5" />
@@ -515,13 +541,13 @@ function UserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/profile")}>
+        <DropdownMenuItem onClick={() => navigate(role === "super_master" ? "/super-master" : "/profile")}>
           <User className="h-4 w-4" />
-          Profile
+          {role === "super_master" ? "Platform Console" : "Profile"}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/settings")}>
+        <DropdownMenuItem onClick={() => navigate(role === "super_master" ? "/super-master/settings" : "/settings")}>
           <Settings className="h-4 w-4" />
-          Settings
+          {role === "super_master" ? "Platform Settings" : "Settings"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} variant="destructive">

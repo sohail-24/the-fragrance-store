@@ -98,6 +98,7 @@ export default function SuperMasterDashboard() {
     slug: "",
     type: "supplier" as "supplier" | "buyer" | "both",
     description: "",
+    logo: "",
     website: "",
     email: "",
     phone: "",
@@ -112,6 +113,7 @@ export default function SuperMasterDashboard() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     description: "",
+    logo: "",
     website: "",
     email: "",
     phone: "",
@@ -160,6 +162,7 @@ export default function SuperMasterDashboard() {
         slug: "",
         type: "supplier",
         description: "",
+        logo: "",
         website: "",
         email: "",
         phone: "",
@@ -201,8 +204,8 @@ export default function SuperMasterDashboard() {
   });
 
   const stats = statsQuery.data;
-  const tenants = stats?.tenants ?? [];
-  const owners = ownersQuery.data ?? [];
+  const tenants = useMemo(() => stats?.tenants ?? [], [stats?.tenants]);
+  const owners = useMemo(() => ownersQuery.data ?? [], [ownersQuery.data]);
 
   // Filtered websites
   const filteredTenants = useMemo(() => {
@@ -250,6 +253,7 @@ export default function SuperMasterDashboard() {
       slug: formData.slug.trim() || undefined,
       type: formData.type,
       description: formData.description.trim() || undefined,
+      logo: formData.logo.trim() || undefined,
       website: formData.website.trim() || undefined,
       email: formData.email.trim() || undefined,
       phone: formData.phone.trim() || undefined,
@@ -892,6 +896,7 @@ export default function SuperMasterDashboard() {
                         setEditFormData({
                           name: tenant.name,
                           description: tenant.description || "",
+                          logo: tenant.logo || "",
                           website: tenant.website || "",
                           email: tenant.email || "",
                           phone: tenant.phone || "",
@@ -1167,18 +1172,18 @@ export default function SuperMasterDashboard() {
                 <div className="flex items-center justify-between bg-neutral-950 p-3 rounded border border-neutral-800">
                   <span className="text-neutral-400">Query Ping Latency:</span>
                   <span className="font-mono text-neutral-200">
-                    {healthQuery.data?.database.latencyMs ?? 15} ms
+                    {healthQuery.data?.database.latencyMs !== undefined ? `${healthQuery.data.database.latencyMs} ms` : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between bg-neutral-950 p-3 rounded border border-neutral-800">
                   <span className="text-neutral-400">Node.js Process Uptime:</span>
                   <span className="font-mono text-neutral-200">
-                    {healthQuery.data?.server.uptimeSeconds ?? 120} seconds
+                    {healthQuery.data?.server.uptimeSeconds !== undefined ? `${healthQuery.data.server.uptimeSeconds}s` : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between bg-neutral-950 p-3 rounded border border-neutral-800">
                   <span className="text-neutral-400">Runtime Node Version:</span>
-                  <span className="font-mono text-neutral-300">{healthQuery.data?.server.nodeVersion ?? "v22.23.2"}</span>
+                  <span className="font-mono text-neutral-300">{healthQuery.data?.server.nodeVersion ?? "Node.js v22"}</span>
                 </div>
               </div>
             </Card>
@@ -1392,6 +1397,22 @@ export default function SuperMasterDashboard() {
             </div>
 
             <div className="space-y-1">
+              <Label htmlFor="create-logo" className="text-xs text-neutral-300">
+                Branding Configuration (Logo URL / Asset Path)
+              </Label>
+              <Input
+                id="create-logo"
+                placeholder="e.g. /branding/logo.png or https://example.com/logo.png"
+                value={formData.logo}
+                onChange={(e) => setFormData((p) => ({ ...p, logo: e.target.value }))}
+                className="bg-neutral-950 border-neutral-800 text-white text-xs"
+              />
+              <p className="text-[10px] text-neutral-500">
+                Custom boutique emblem displayed on tenant storefront and order documents.
+              </p>
+            </div>
+
+            <div className="space-y-1">
               <Label htmlFor="create-domain" className="text-xs text-neutral-300">
                 Custom Domain (Optional)
               </Label>
@@ -1501,6 +1522,7 @@ export default function SuperMasterDashboard() {
                   id: editingTenant.id,
                   name: editFormData.name.trim(),
                   description: editFormData.description.trim() || undefined,
+                  logo: editFormData.logo.trim() || undefined,
                   website: editFormData.website.trim() || undefined,
                   email: editFormData.email.trim() || undefined,
                   phone: editFormData.phone.trim() || undefined,
@@ -1535,6 +1557,16 @@ export default function SuperMasterDashboard() {
                   value={editFormData.description}
                   onChange={(e) => setEditFormData((p) => ({ ...p, description: e.target.value }))}
                   className="bg-neutral-950 border-neutral-800 text-white text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-neutral-300">Branding Logo (URL / Asset Path)</Label>
+                <Input
+                  value={editFormData.logo}
+                  onChange={(e) => setEditFormData((p) => ({ ...p, logo: e.target.value }))}
+                  className="bg-neutral-950 border-neutral-800 text-white text-xs"
+                  placeholder="/branding/logo.png"
                 />
               </div>
 

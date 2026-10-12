@@ -213,6 +213,14 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/super-master/audit"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
             path="/super-master/settings"
             element={
               <SuperMasterRoute>

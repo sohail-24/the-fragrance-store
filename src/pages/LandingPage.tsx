@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import {
   Menu,
@@ -343,7 +343,17 @@ export function getHeadlineLines(campaign: HeroCampaign): {
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const isStorefrontExplicit = searchParams.get("storefront") === "true" || searchParams.get("preview") === "true";
+
+  // Redirect authorized Super Master to central platform console rather than shop storefront
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isSuperMaster(user) && !isStorefrontExplicit) {
+      navigate("/super-master", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, user, navigate, isStorefrontExplicit]);
+
   const guestCart = useGuestCart();
   const { isOrderActive, activeOrders, activeCount } = usePlacedOrder();
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);

@@ -568,6 +568,10 @@ export function createMockDb() {
   const mockDb: any = {
     _store: globalStore,
 
+    async execute(query?: any) {
+      return { rows: [{ "?column?": 1 }] };
+    },
+
     select(selection?: any) {
       let fromTableKey: keyof MockStore = "products";
       const joins: any[] = [];
