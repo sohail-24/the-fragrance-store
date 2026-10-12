@@ -36,14 +36,17 @@ import {
 } from "@/components/ui/sidebar";
 import { AuthLayoutSkeleton } from "./AuthLayoutSkeleton";
 import {
+  Activity,
   BarChart3,
   Bell,
   Boxes,
   Building2,
   ClipboardList,
   Command,
+  CreditCard,
   FolderTree,
   Gift,
+  Globe,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -54,6 +57,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
@@ -131,37 +135,26 @@ const roleNavigation: Record<AppRole, NavGroup[]> = {
   ],
   super_master: [
     {
-      label: "SaaS Super Master",
+      label: "Platform Governance",
       items: [
-        { icon: ShieldCheck, label: "Super Master Console", path: "/super-master" },
-        { icon: Building2, label: "Brand Tenants", path: "/super-master" },
-        { icon: BarChart3, label: "Global SaaS Metrics", path: "/reports" },
+        { icon: LayoutDashboard, label: "Platform Overview", path: "/super-master" },
+        { icon: Globe, label: "Websites", path: "/super-master/websites" },
+        { icon: Users, label: "Shop Owners", path: "/super-master/owners" },
       ],
     },
     {
-      label: "House Operations",
+      label: "Intelligence & Finance",
       items: [
-        { icon: LayoutDashboard, label: "Store Dashboard", path: "/dashboard" },
-        { icon: Package, label: "Product Catalog", path: "/products" },
-        { icon: FolderTree, label: "Categories", path: "/categories" },
-        { icon: Warehouse, label: "Inventory", path: "/inventory" },
-        { icon: Warehouse, label: "Warehouse", path: "/warehouse" },
-        { icon: ClipboardList, label: "Orders", path: "/orders" },
-        { icon: ReceiptText, label: "Invoices", path: "/invoices" },
-        { icon: Users, label: "Customers", path: "/customers" },
-        { icon: Truck, label: "Delivery Zones", path: "/delivery-zones" },
-        { icon: ReceiptText, label: "GST Rules", path: "/gst-rules" },
-        { icon: SlidersHorizontal, label: "Shipping Rules", path: "/shipping-rules" },
-        { icon: Gift, label: "Coupons", path: "/coupons" },
-        { icon: User, label: "Staff", path: "/staff" },
+        { icon: BarChart3, label: "Analytics & Usage", path: "/super-master/analytics" },
+        { icon: CreditCard, label: "Subscriptions", path: "/super-master/subscriptions" },
       ],
     },
     {
-      label: "Administration",
+      label: "System Health & Config",
       items: [
-        { icon: Settings, label: "Settings", path: "/settings" },
-        { icon: Plus, label: "Add Product", path: "/products/new" },
-        { icon: User, label: "Profile", path: "/profile" },
+        { icon: Activity, label: "Monitoring & Errors", path: "/super-master/monitoring" },
+        { icon: ShieldAlert, label: "Audit Logs", path: "/super-master/audit-logs" },
+        { icon: Settings, label: "Platform Settings", path: "/super-master/settings" },
       ],
     },
   ],
@@ -397,35 +390,55 @@ function AppLayoutContent() {
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-card border-t pb-safe md:hidden shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.05)]">
           {role === "super_master" ? (
-            <Link to="/super-master" className={`flex flex-col items-center gap-1 ${isActive("/super-master") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
-              <ShieldCheck className="h-5 w-5" />
-              <span className="text-[10px] font-medium">Console</span>
-            </Link>
+            <>
+              <Link to="/super-master" className={`flex flex-col items-center gap-1 ${location.pathname === "/super-master" ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+                <LayoutDashboard className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Overview</span>
+              </Link>
+              <Link to="/super-master/websites" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/websites") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+                <Globe className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Websites</span>
+              </Link>
+              <Link to="/super-master/owners" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/owners") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+                <Users className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Owners</span>
+              </Link>
+              <Link to="/super-master/monitoring" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/monitoring") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+                <Activity className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Health</span>
+              </Link>
+              <Link to="/super-master/settings" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/settings") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+                <Settings className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Settings</span>
+              </Link>
+            </>
           ) : (
-            <Link to={role === "buyer" ? "/" : "/dashboard"} className={`flex flex-col items-center gap-1 ${isActive(role === "buyer" ? "/" : "/dashboard") ? "text-primary" : "text-muted-foreground"}`}>
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="text-[10px] font-medium">Home</span>
-            </Link>
+            <>
+              <Link to={role === "buyer" ? "/" : "/dashboard"} className={`flex flex-col items-center gap-1 ${isActive(role === "buyer" ? "/" : "/dashboard") ? "text-primary" : "text-muted-foreground"}`}>
+                <LayoutDashboard className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Home</span>
+              </Link>
+              <Link to="/products" className={`flex flex-col items-center gap-1 ${isActive("/products") ? "text-primary" : "text-muted-foreground"}`}>
+                <ShoppingBag className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Catalog</span>
+              </Link>
+              <Link to="/cart" className={`relative flex flex-col items-center gap-1 ${isActive("/cart") ? "text-primary" : "text-muted-foreground"}`}>
+                <div className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {!!cartQuery.data?.count && (
+                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                      {cartQuery.data.count}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium">Cart</span>
+              </Link>
+              <Link to="/profile" className={`flex flex-col items-center gap-1 ${isActive("/profile") ? "text-primary" : "text-muted-foreground"}`}>
+                <User className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Profile</span>
+              </Link>
+            </>
           )}
-          <Link to="/products" className={`flex flex-col items-center gap-1 ${isActive("/products") ? "text-primary" : "text-muted-foreground"}`}>
-            <ShoppingBag className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Catalog</span>
-          </Link>
-          <Link to="/cart" className={`relative flex flex-col items-center gap-1 ${isActive("/cart") ? "text-primary" : "text-muted-foreground"}`}>
-            <div className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {!!cartQuery.data?.count && (
-                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                  {cartQuery.data.count}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] font-medium">Cart</span>
-          </Link>
-          <Link to="/profile" className={`flex flex-col items-center gap-1 ${isActive("/profile") ? "text-primary" : "text-muted-foreground"}`}>
-            <User className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Profile</span>
-          </Link>
         </div>
       </SidebarInset>
     </>

@@ -1,21 +1,34 @@
 import { getDb } from "./connection";
-import { companies, products, orders, invoices, type Company } from "@db/schema";
-import { eq, sql, desc, ilike, or } from "drizzle-orm";
+import { companies, products, orders, users, tenantMemberships, type Company } from "@db/schema";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { ensureDefaultBusiness } from "./companies";
+import { upsertTenantMembership } from "./memberships";
+
+export type TenantOwner = {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+};
 
 export type TenantSummary = Company & {
   productCount: number;
   orderCount: number;
   totalRevenue: string;
+  owner: TenantOwner | null;
 };
 
 export type PlatformSaaSStats = {
   totalTenants: number;
   activeTenants: number;
+  suspendedTenants: number;
   verifiedTenants: number;
   totalProducts: number;
   totalOrders: number;
   totalRevenue: string;
+  currency: string;
+  totalOwners: number;
   tenants: TenantSummary[];
 };
 
@@ -40,6 +53,9 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
       orderBy: [desc(companies.createdAt)],
     });
 
+    const allUsers = await db.query.users.findMany();
+    const adminOwners = allUsers.filter((u) => u.role === "admin");
+
     let totalProductsCount = 0;
     let totalOrdersCount = 0;
     let totalRevenueSum = 0;
@@ -49,6 +65,7 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
         let productCount = 0;
         let orderCount = 0;
         let revenue = 0;
+        let owner: TenantOwner | null = null;
 
         try {
           const productRes = await db
@@ -74,6 +91,45 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
           // fallback
         }
 
+        // Resolve Assigned Owner
+        try {
+          const membership = await db.query.tenantMemberships.findFirst({
+            where: and(
+              eq(tenantMemberships.companyId, company.id),
+              eq(tenantMemberships.role, "owner"),
+              eq(tenantMemberships.isActive, true)
+            ),
+          });
+          if (membership) {
+            const memberUser = allUsers.find((u) => u.id === membership.userId);
+            if (memberUser) {
+              owner = {
+                id: memberUser.id,
+                name: memberUser.name,
+                email: memberUser.email,
+                phone: memberUser.phone,
+                role: "owner",
+              };
+            }
+          }
+          if (!owner) {
+            const directAdmin = allUsers.find(
+              (u) => u.companyId === company.id && u.role === "admin"
+            );
+            if (directAdmin) {
+              owner = {
+                id: directAdmin.id,
+                name: directAdmin.name,
+                email: directAdmin.email,
+                phone: directAdmin.phone,
+                role: "admin",
+              };
+            }
+          }
+        } catch {
+          // fallback
+        }
+
         totalProductsCount += productCount;
         totalOrdersCount += orderCount;
         totalRevenueSum += revenue;
@@ -83,17 +139,24 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
           productCount,
           orderCount,
           totalRevenue: revenue.toFixed(2),
+          owner,
         };
       })
     );
 
+    const activeTenants = allCompanies.filter((c) => c.isActive).length;
+    const suspendedTenants = allCompanies.filter((c) => !c.isActive).length;
+
     return {
       totalTenants: allCompanies.length,
-      activeTenants: allCompanies.filter((c) => c.isActive).length,
+      activeTenants,
+      suspendedTenants,
       verifiedTenants: allCompanies.filter((c) => c.isVerified).length,
       totalProducts: totalProductsCount,
       totalOrders: totalOrdersCount,
       totalRevenue: totalRevenueSum.toFixed(2),
+      currency: "INR",
+      totalOwners: adminOwners.length,
       tenants: tenantsWithMetrics,
     };
   } catch (error) {
@@ -102,20 +165,36 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
     return {
       totalTenants: 1,
       activeTenants: 1,
+      suspendedTenants: 0,
       verifiedTenants: 1,
       totalProducts: 0,
       totalOrders: 0,
       totalRevenue: "0.00",
+      currency: "INR",
+      totalOwners: 1,
       tenants: [
         {
           ...defaultCo,
           productCount: 0,
           orderCount: 0,
           totalRevenue: "0.00",
+          owner: null,
         },
       ],
     };
   }
+}
+
+export async function assignTenantOwner(companyId: number, userId: number): Promise<boolean> {
+  const db = getDb();
+  await upsertTenantMembership({
+    userId,
+    companyId,
+    role: "owner",
+    isActive: true,
+  });
+  await db.update(users).set({ companyId }).where(eq(users.id, userId));
+  return true;
 }
 
 export async function listTenants(filter?: {

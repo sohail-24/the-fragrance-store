@@ -1,8 +1,8 @@
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/i18n";
-import { getAppRole } from "@/lib/roles";
+import { getAppRole, isSuperMaster } from "@/lib/roles";
 import { MetricCard } from "@/components/freshflow/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,10 @@ const ownerNav = [
 export default function Dashboard() {
   const { user } = useAuth();
   const role = getAppRole(user);
+
+  if (isSuperMaster(user)) {
+    return <Navigate to="/super-master" replace />;
+  }
 
   const featuredProductsQuery = trpc.product.featured.useQuery(undefined, {
     retry: false,

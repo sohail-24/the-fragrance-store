@@ -50,6 +50,10 @@ describe("Super Master Dashboard & Authorization Verification", () => {
     expect(procedures.createTenant).toBeDefined();
     expect(procedures.updateTenant).toBeDefined();
     expect(procedures.setStatus).toBeDefined();
+    expect(procedures.listOwners).toBeDefined();
+    expect(procedures.assignOwner).toBeDefined();
+    expect(procedures.systemHealth).toBeDefined();
+    expect(procedures.auditLogs).toBeDefined();
 
     // Must NOT expose destructive physical deletion endpoint
     expect(procedures.deleteTenant).toBeUndefined();
@@ -61,6 +65,10 @@ describe("Super Master Dashboard & Authorization Verification", () => {
     expect(appProcedures["superMaster.createTenant"]).toBeDefined();
     expect(appProcedures["superMaster.updateTenant"]).toBeDefined();
     expect(appProcedures["superMaster.setStatus"]).toBeDefined();
+    expect(appProcedures["superMaster.listOwners"]).toBeDefined();
+    expect(appProcedures["superMaster.assignOwner"]).toBeDefined();
+    expect(appProcedures["superMaster.systemHealth"]).toBeDefined();
+    expect(appProcedures["superMaster.auditLogs"]).toBeDefined();
   });
 
   it("validates administrator and super master authentication credentials safely", () => {
@@ -92,8 +100,11 @@ describe("Super Master Dashboard & Authorization Verification", () => {
       } as any,
     });
 
-    // Ordinary admin cannot access Level 1 stats
+    // Ordinary admin cannot access Level 1 procedures
     await expect(callerOrdinaryAdmin.stats()).rejects.toThrow(/Super Master/);
+    await expect(callerOrdinaryAdmin.listOwners()).rejects.toThrow(/Super Master/);
+    await expect(callerOrdinaryAdmin.systemHealth()).rejects.toThrow(/Super Master/);
+    await expect(callerOrdinaryAdmin.auditLogs()).rejects.toThrow(/Super Master/);
 
     const callerCustomer = superMasterRouter.createCaller({
       req: { headers: {} } as any,
@@ -105,8 +116,11 @@ describe("Super Master Dashboard & Authorization Verification", () => {
       } as any,
     });
 
-    // Customer cannot access Level 1 stats
+    // Customer cannot access Level 1 procedures
     await expect(callerCustomer.stats()).rejects.toThrow(/Super Master/);
+    await expect(callerCustomer.listOwners()).rejects.toThrow(/Super Master/);
+    await expect(callerCustomer.systemHealth()).rejects.toThrow(/Super Master/);
+    await expect(callerCustomer.auditLogs()).rejects.toThrow(/Super Master/);
 
     const callerAnonymous = superMasterRouter.createCaller({
       req: { headers: {} } as any,
@@ -116,5 +130,32 @@ describe("Super Master Dashboard & Authorization Verification", () => {
 
     // Anonymous visitor cannot access Level 1 stats
     await expect(callerAnonymous.stats()).rejects.toThrow();
+  });
+
+  it("allows authorized Super Master caller to retrieve real platform data", async () => {
+    const callerSuperMaster = superMasterRouter.createCaller({
+      req: { headers: {} } as any,
+      resHeaders: new Headers(),
+      user: {
+        id: 2,
+        email: SUPER_MASTER_EMAIL,
+        role: "admin",
+      } as any,
+    });
+
+    const stats = await callerSuperMaster.stats();
+    expect(stats.totalTenants).toBeGreaterThanOrEqual(1);
+    expect(stats.currency).toBe("INR");
+    expect(Array.isArray(stats.tenants)).toBe(true);
+
+    const health = await callerSuperMaster.systemHealth();
+    expect(health.database.status).toBe("healthy");
+    expect(health.server.status).toBe("online");
+
+    const owners = await callerSuperMaster.listOwners();
+    expect(Array.isArray(owners)).toBe(true);
+
+    const audit = await callerSuperMaster.auditLogs();
+    expect(Array.isArray(audit.events)).toBe(true);
   });
 });

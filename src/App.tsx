@@ -123,6 +123,17 @@ function SuperMasterRoute({ children }: { children: ReactNode }) {
   return children;
 }
 
+function AdminEntryRedirect() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return <PageLoader />;
+  }
+  if (isAuthenticated && isSuperMaster(user)) {
+    return <Navigate to="/super-master" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
+}
+
 function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -133,7 +144,7 @@ function AppRoutes() {
         {/* Legacy customer login remains in source but is intentionally inactive. */}
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/admin" element={<AdminEntryRedirect />} />
 
         {/* Dashboard routes with layout */}
         <Route element={<AppLayout />}>
@@ -146,7 +157,63 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/super-master/websites"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
             path="/super-master/tenants"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/owners"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/analytics"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/subscriptions"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/monitoring"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/audit-logs"
+            element={
+              <SuperMasterRoute>
+                <SuperMasterDashboard />
+              </SuperMasterRoute>
+            }
+          />
+          <Route
+            path="/super-master/settings"
             element={
               <SuperMasterRoute>
                 <SuperMasterDashboard />

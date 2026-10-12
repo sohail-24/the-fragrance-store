@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SUPER_MASTER_EMAIL } from "@/lib/roles";
+import { SUPER_MASTER_EMAIL, isSuperMaster } from "@/lib/roles";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -24,7 +24,13 @@ export default function AdminLogin() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      navigate(returnTo?.startsWith("/") ? returnTo : "/dashboard", { replace: true });
+      if (returnTo?.startsWith("/")) {
+        navigate(returnTo, { replace: true });
+      } else if (isSuperMaster(user)) {
+        navigate("/super-master", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, isLoading, user, navigate, returnTo]);
 
@@ -38,7 +44,13 @@ export default function AdminLogin() {
       }
       utils.auth.me.setData(undefined, result.user);
       await utils.auth.me.refetch();
-      navigate(returnTo?.startsWith("/") ? returnTo : "/dashboard", { replace: true });
+      if (returnTo?.startsWith("/")) {
+        navigate(returnTo, { replace: true });
+      } else if (isSuperMaster(result.user)) {
+        navigate("/super-master", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to sign in.");
     }
