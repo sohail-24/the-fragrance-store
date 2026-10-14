@@ -72,21 +72,31 @@ describe("Super Master Dashboard & Authorization Verification", () => {
   });
 
   it("validates administrator and super master authentication credentials safely", () => {
-    // Configured admin login
-    expect(validateAdminCredentials("admin@freshflow.com", "admin123")).toBe(true);
+    const origSmEmail = process.env.SUPER_MASTER_EMAIL;
+    const origSmPass = process.env.SUPER_MASTER_PASSWORD;
+    try {
+      process.env.SUPER_MASTER_EMAIL = SUPER_MASTER_EMAIL;
+      process.env.SUPER_MASTER_PASSWORD = "test-super-password";
 
-    // Super Master login
-    expect(validateAdminCredentials(SUPER_MASTER_EMAIL, "admin123")).toBe(true);
+      // Configured admin login
+      expect(validateAdminCredentials("admin@freshflow.com", "admin123")).toBe(true);
 
-    // Case-insensitivity & trimming
-    expect(validateAdminCredentials(`  ${SUPER_MASTER_EMAIL.toUpperCase()}  `, "admin123")).toBe(true);
+      // Super Master login with configured credentials
+      expect(validateAdminCredentials(SUPER_MASTER_EMAIL, "test-super-password")).toBe(true);
 
-    // Invalid password
-    expect(validateAdminCredentials(SUPER_MASTER_EMAIL, "wrongpassword")).toBe(false);
-    expect(validateAdminCredentials("admin@freshflow.com", "wrongpassword")).toBe(false);
+      // Case-insensitivity & trimming
+      expect(validateAdminCredentials(`  ${SUPER_MASTER_EMAIL.toUpperCase()}  `, "test-super-password")).toBe(true);
 
-    // Unknown email
-    expect(validateAdminCredentials("unknown@example.com", "admin123")).toBe(false);
+      // Invalid password
+      expect(validateAdminCredentials(SUPER_MASTER_EMAIL, "wrongpassword")).toBe(false);
+      expect(validateAdminCredentials("admin@freshflow.com", "wrongpassword")).toBe(false);
+
+      // Unknown email
+      expect(validateAdminCredentials("unknown@example.com", "admin123")).toBe(false);
+    } finally {
+      process.env.SUPER_MASTER_EMAIL = origSmEmail;
+      process.env.SUPER_MASTER_PASSWORD = origSmPass;
+    }
   });
 
   it("enforces strict rejection for unauthorized callers on superMaster procedures", async () => {

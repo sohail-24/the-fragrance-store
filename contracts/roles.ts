@@ -38,11 +38,14 @@ export function isPlatformAdmin(user?: UserLike | null) {
 
 export function isSuperMaster(user?: UserLike | null, configuredSuperMasterEmail?: string | null) {
   if (!user) return false;
-  const targetEmail = normalizeEmail(configuredSuperMasterEmail || SUPER_MASTER_EMAIL);
+  const envEmail = typeof process !== "undefined" && process?.env?.SUPER_MASTER_EMAIL ? process.env.SUPER_MASTER_EMAIL : null;
+  const targetEmail = normalizeEmail(configuredSuperMasterEmail || envEmail || SUPER_MASTER_EMAIL);
   const userEmail = normalizeEmail(user.email);
+
   if (!userEmail || !targetEmail || userEmail !== targetEmail) {
     return false;
   }
+
   // Must possess explicit administrative authorization; an unprivileged user cannot escalate
   // simply by holding a matching email string.
   return user.role === "super_master" || user.role === "admin";

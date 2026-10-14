@@ -29,10 +29,14 @@ import {
   activeAdminUser,
   authenticateAdminRequest,
   clearAdminSessionCookies,
+  isSuperMasterConfigured,
+  isSuperMasterEmail,
   issueAdminSessionCookies,
   resolveAdminUser,
   signAdminToken,
   validateAdminCredentials,
+  validateOrdinaryAdminCredentials,
+  validateSuperMasterCredentials,
 } from "./auth/admin-session";
 
 const mobileNumberSchema = z
@@ -258,13 +262,32 @@ export const authRouter = createRouter({
   loginAdmin: publicQuery
     .input(z.object({ email: z.string().trim().email(), password: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      if (!validateAdminCredentials(input.email, input.password)) {
+      const email = input.email.trim().toLowerCase();
+
+      // Super Master authentication branch
+      if (isSuperMasterEmail(email)) {
+        if (!isSuperMasterConfigured()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Super Master authentication is not configured on the server. Please set SUPER_MASTER_EMAIL and SUPER_MASTER_PASSWORD in environment settings.",
+          });
+        }
+        if (!validateSuperMasterCredentials(email, input.password)) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid administrator credentials." });
+        }
+        await issueAdminSessionCookies(email, ctx.req.headers, ctx.resHeaders, "super_master");
+        const token = await signAdminToken(email, "access", "super_master");
+        const user = await resolveAdminUser(email, "super_master");
+        return { user: publicUser(user), token };
+      }
+
+      // Ordinary shop administrator branch
+      if (!validateOrdinaryAdminCredentials(email, input.password)) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid administrator credentials." });
       }
-      const email = input.email.trim().toLowerCase();
-      await issueAdminSessionCookies(email, ctx.req.headers, ctx.resHeaders);
-      const token = await signAdminToken(email, "access");
-      const user = await resolveAdminUser(email);
+      await issueAdminSessionCookies(email, ctx.req.headers, ctx.resHeaders, "admin");
+      const token = await signAdminToken(email, "access", "admin");
+      const user = await resolveAdminUser(email, "admin");
       return { user: publicUser(user), token };
     }),
 

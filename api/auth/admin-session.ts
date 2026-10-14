@@ -1,5 +1,5 @@
 import * as cookie from "cookie";
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { users, type User } from "@db/schema";
 import { eq, or, and } from "drizzle-orm";
@@ -19,26 +19,87 @@ type TokenType = "access" | "refresh";
 
 let cachedAdminCompanyId: number | null = null;
 
+export function safeCompare(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(hashA, hashB);
+}
+
+export function getSuperMasterConfig() {
+  const email = (
+    process.env.SUPER_MASTER_EMAIL !== undefined
+      ? process.env.SUPER_MASTER_EMAIL
+      : env.superMasterEmail || ""
+  ).trim().toLowerCase();
+  const password = (
+    process.env.SUPER_MASTER_PASSWORD !== undefined
+      ? process.env.SUPER_MASTER_PASSWORD
+      : env.superMasterPassword || ""
+  ).trim();
+  return {
+    email,
+    password,
+    isConfigured: Boolean(email && password),
+  };
+}
+
+export function isSuperMasterConfigured(): boolean {
+  return getSuperMasterConfig().isConfigured;
+}
+
+export function isSuperMasterEmail(email: string): boolean {
+  const { email: smEmail } = getSuperMasterConfig();
+  if (!smEmail) return false;
+  return email.trim().toLowerCase() === smEmail;
+}
+
+export function isOrdinaryAdminEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  const configured = (process.env.ADMIN_EMAIL || env.adminEmail || "").trim().toLowerCase();
+  if (configured && normalized === configured) return true;
+  if (!env.isProduction && normalized === "admin@freshflow.com") return true;
+  return false;
+}
+
 function configuredAdmin() {
-  if (!env.adminEmail || !env.adminPassword || !env.jwtAccessSecret || !env.jwtRefreshSecret) {
+  const adminEmail = process.env.ADMIN_EMAIL || env.adminEmail || "admin@freshflow.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || env.adminPassword || "admin123";
+  const accessSecret = process.env.JWT_ACCESS_SECRET || env.jwtAccessSecret;
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || env.jwtRefreshSecret;
+
+  if (!adminEmail || !adminPassword || !accessSecret || !refreshSecret) {
     throw new Error("Admin authentication is not configured.");
   }
-  return { email: env.adminEmail.trim().toLowerCase(), password: env.adminPassword };
+  return { email: adminEmail.trim().toLowerCase(), password: adminPassword };
 }
 
 function keyFor(type: TokenType) {
-  return encoder.encode(type === "access" ? env.jwtAccessSecret : env.jwtRefreshSecret);
+  const accessSecret = process.env.JWT_ACCESS_SECRET || env.jwtAccessSecret;
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || env.jwtRefreshSecret;
+  const secret = type === "access" ? accessSecret : refreshSecret;
+  if (!secret) {
+    throw new Error(`JWT_${type.toUpperCase()}_SECRET is not configured.`);
+  }
+  return encoder.encode(secret);
 }
 
-export function activeAdminUser(email: string, companyId?: number | null): User {
+export function activeAdminUser(
+  email: string,
+  companyId?: number | null,
+  roleOverride?: "super_master" | "admin"
+): User {
   const finalCompanyId = companyId ?? cachedAdminCompanyId ?? 1;
+  const isSM = isSuperMasterEmail(email);
+  const effectiveRole = isSM ? "super_master" : (roleOverride ?? "admin");
+
   return {
     id: 1,
     unionId: `admin:${email.trim().toLowerCase()}`,
     authProvider: "local",
-    role: "admin",
+    role: effectiveRole as any,
     email: email.trim().toLowerCase(),
-    name: "Administrator",
+    name: isSM ? "Super Master" : "Administrator",
     phone: null,
     companyId: finalCompanyId,
     passwordHash: null,
@@ -52,12 +113,17 @@ export function activeAdminUser(email: string, companyId?: number | null): User 
   } as User;
 }
 
-export async function resolveAdminUser(email: string): Promise<User> {
+export async function resolveAdminUser(
+  email: string,
+  roleOverride?: "super_master" | "admin"
+): Promise<User> {
   const defaultBusiness = await ensureDefaultBusiness();
   cachedAdminCompanyId = defaultBusiness.id;
   const db = getDb();
   const normalizedEmail = email.trim().toLowerCase();
   const unionId = `admin:${normalizedEmail}`;
+  const isSM = isSuperMasterEmail(normalizedEmail);
+  const effectiveRole = isSM ? "super_master" : (roleOverride ?? "admin");
 
   try {
     let user = await db.query.users.findFirst({
@@ -73,16 +139,16 @@ export async function resolveAdminUser(email: string): Promise<User> {
         .values({
           unionId,
           authProvider: "local",
-          name: "Administrator",
+          name: isSM ? "Super Master" : "Administrator",
           email: normalizedEmail,
-          role: "admin",
+          role: "admin", // stored as "admin" in DB due to Postgres userRoleEnum constraint
           companyId: defaultBusiness.id,
           isActive: true,
           lastSignInAt: new Date(),
         })
         .returning();
       user = inserted;
-    } else if (user.companyId !== defaultBusiness.id || user.role !== "admin" || !user.isActive) {
+    } else if (user.companyId !== defaultBusiness.id || !user.isActive) {
       const [updated] = await db
         .update(users)
         .set({
@@ -108,49 +174,61 @@ export async function resolveAdminUser(email: string): Promise<User> {
       } catch {
         // Non-fatal if table not yet migrated
       }
-      return user;
+      return {
+        ...user,
+        role: effectiveRole as any,
+      };
     }
   } catch (error) {
     console.warn("[AdminSession] Database lookup/sync failed, using fallback linked user:", error);
   }
 
-  return activeAdminUser(normalizedEmail, defaultBusiness.id);
+  return activeAdminUser(normalizedEmail, defaultBusiness.id, effectiveRole);
 }
 
-export function validateAdminCredentials(email: string, password: string) {
-  const configured = configuredAdmin();
-  const normalizedEmail = email.trim().toLowerCase();
+export function validateSuperMasterCredentials(email: string, password: string): boolean {
+  const sm = getSuperMasterConfig();
+  if (!sm.isConfigured) {
+    return false;
+  }
+  if (!isSuperMasterEmail(email)) {
+    return false;
+  }
+  return safeCompare(password, sm.password);
+}
 
-  // Support configured password, plus development fallback if not yet overridden in production
+export function validateOrdinaryAdminCredentials(email: string, password: string): boolean {
+  if (!isOrdinaryAdminEmail(email)) {
+    return false;
+  }
+  const configured = configuredAdmin();
   const validPasswords = [configured.password];
   if (!env.isProduction && configured.password !== "admin123") {
     validPasswords.push("admin123");
   }
-
-  const passwordMatches = validPasswords.some((validPass) => {
-    const suppliedBuf = Buffer.from(password);
-    const validBuf = Buffer.from(validPass);
-    return suppliedBuf.length === validBuf.length && timingSafeEqual(suppliedBuf, validBuf);
-  });
-
-  if (!passwordMatches) return false;
-
-  const validEmails = new Set<string>();
-  if (configured.email) validEmails.add(configured.email.trim().toLowerCase());
-  if (env.superMasterEmail) validEmails.add(env.superMasterEmail.trim().toLowerCase());
-  if (!env.isProduction) {
-    validEmails.add("admin@freshflow.com");
-  }
-
-  return validEmails.has(normalizedEmail);
+  return validPasswords.some((validPass) => safeCompare(password, validPass));
 }
 
-async function signToken(email: string, type: TokenType) {
+export function validateAdminCredentials(email: string, password: string): boolean {
+  if (!email || !password) return false;
+  if (isSuperMasterEmail(email)) {
+    return validateSuperMasterCredentials(email, password);
+  }
+  if (isOrdinaryAdminEmail(email)) {
+    return validateOrdinaryAdminCredentials(email, password);
+  }
+  return false;
+}
+
+async function signToken(email: string, type: TokenType, roleOverride?: "super_master" | "admin") {
   const maxAge = type === "access" ? accessMaxAgeMs : refreshMaxAgeMs;
-  return new SignJWT({ typ: type, role: "admin" })
+  const isSM = isSuperMasterEmail(email);
+  const tokenRole = roleOverride ?? (isSM ? "super_master" : "admin");
+
+  return new SignJWT({ typ: type, role: tokenRole })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer("shop-admin")
-    .setSubject(email)
+    .setSubject(email.trim().toLowerCase())
     .setIssuedAt()
     .setExpirationTime(Math.floor((Date.now() + maxAge) / 1000))
     .sign(keyFor(type));
@@ -159,16 +237,26 @@ async function signToken(email: string, type: TokenType) {
 async function verifyToken(token: string, type: TokenType) {
   const result = await jwtVerify(token, keyFor(type), { issuer: "shop-admin" });
   const subjectEmail = typeof result.payload.sub === "string" ? result.payload.sub.trim().toLowerCase() : "";
-  const configured = configuredAdmin();
-  const validEmails = new Set<string>();
-  if (configured.email) validEmails.add(configured.email.trim().toLowerCase());
-  if (env.superMasterEmail) validEmails.add(env.superMasterEmail.trim().toLowerCase());
-  if (!env.isProduction) validEmails.add("admin@freshflow.com");
+  const tokenRole = typeof result.payload.role === "string" ? result.payload.role : "";
 
-  if (result.payload.typ !== type || result.payload.role !== "admin" || !validEmails.has(subjectEmail)) {
-    throw new Error("Invalid admin token");
+  const isSM = isSuperMasterEmail(subjectEmail);
+  const isOrdinary = isOrdinaryAdminEmail(subjectEmail);
+
+  if (!isSM && !isOrdinary) {
+    throw new Error("Invalid admin token: unauthorized subject");
   }
-  return await resolveAdminUser(subjectEmail);
+
+  if (result.payload.typ !== type) {
+    throw new Error("Invalid admin token type");
+  }
+
+  // Security boundary: ordinary administrator credentials cannot claim super_master role
+  if (!isSM && tokenRole === "super_master") {
+    throw new Error("Forged role: non-super-master subject cannot possess super_master role");
+  }
+
+  const assignedRole: "super_master" | "admin" = isSM ? "super_master" : "admin";
+  return await resolveAdminUser(subjectEmail, assignedRole);
 }
 
 function appendCookie(headers: Headers, requestHeaders: Headers, name: string, value: string, maxAgeMs: number) {
@@ -183,14 +271,37 @@ function appendCookie(headers: Headers, requestHeaders: Headers, name: string, v
   }));
 }
 
-export async function signAdminToken(email: string, type: "access" | "refresh" = "access") {
-  return signToken(email, type);
+export async function signAdminToken(
+  email: string,
+  type: "access" | "refresh" = "access",
+  roleOverride?: "super_master" | "admin"
+) {
+  return signToken(email, type, roleOverride);
 }
 
-export async function issueAdminSessionCookies(email: string, requestHeaders: Headers, responseHeaders: Headers) {
+export async function issueAdminSessionCookies(
+  email: string,
+  requestHeaders: Headers,
+  responseHeaders: Headers,
+  roleOverride?: "super_master" | "admin"
+) {
   configuredAdmin();
-  appendCookie(responseHeaders, requestHeaders, accessCookieName, await signToken(email, "access"), accessMaxAgeMs);
-  appendCookie(responseHeaders, requestHeaders, refreshCookieName, await signToken(email, "refresh"), refreshMaxAgeMs);
+  const isSM = isSuperMasterEmail(email);
+  const assignedRole = roleOverride ?? (isSM ? "super_master" : "admin");
+  appendCookie(
+    responseHeaders,
+    requestHeaders,
+    accessCookieName,
+    await signToken(email, "access", assignedRole),
+    accessMaxAgeMs
+  );
+  appendCookie(
+    responseHeaders,
+    requestHeaders,
+    refreshCookieName,
+    await signToken(email, "refresh", assignedRole),
+    refreshMaxAgeMs
+  );
 }
 
 export function clearAdminSessionCookies(requestHeaders: Headers, responseHeaders: Headers) {
@@ -207,6 +318,10 @@ export function clearAdminSessionCookies(requestHeaders: Headers, responseHeader
   }
 }
 
+export async function verifyAdminToken(token: string, type: TokenType = "access") {
+  return verifyToken(token, type);
+}
+
 export async function authenticateAdminRequest(requestHeaders: Headers, responseHeaders?: Headers) {
   const cookies = cookie.parse(requestHeaders.get("cookie") ?? "");
   if (cookies[accessCookieName]) {
@@ -221,16 +336,13 @@ export async function authenticateAdminRequest(requestHeaders: Headers, response
   if (authHeader?.startsWith("Bearer ")) {
     const bearerToken = authHeader.slice(7).trim();
     if (bearerToken) {
-      try {
-        return await verifyToken(bearerToken, "access");
-      } catch {
-        // Bearer token verification failed; fall through to refresh check
-      }
+      return await verifyToken(bearerToken, "access");
     }
   }
 
   if (!cookies[refreshCookieName] || !responseHeaders) throw new Error("Authentication required");
   const user = await verifyToken(cookies[refreshCookieName], "refresh");
-  await issueAdminSessionCookies(user.email!, requestHeaders, responseHeaders);
+  const isSM = isSuperMasterEmail(user.email ?? "");
+  await issueAdminSessionCookies(user.email!, requestHeaders, responseHeaders, isSM ? "super_master" : "admin");
   return user;
 }

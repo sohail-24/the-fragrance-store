@@ -15,8 +15,13 @@ export default function AdminLogin() {
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo");
   const isSuperMasterIntent = Boolean(returnTo?.includes("super-master"));
-  const [email, setEmail] = useState(isSuperMasterIntent ? SUPER_MASTER_EMAIL : "admin@freshflow.com");
-  const [password, setPassword] = useState("admin123");
+  const [loginMode, setLoginMode] = useState<"super_master" | "admin">(
+    isSuperMasterIntent ? "super_master" : "admin"
+  );
+  const [email, setEmail] = useState(
+    isSuperMasterIntent && SUPER_MASTER_EMAIL ? SUPER_MASTER_EMAIL : ""
+  );
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const utils = trpc.useUtils();
   const login = trpc.auth.loginAdmin.useMutation();
@@ -38,7 +43,7 @@ export default function AdminLogin() {
     event.preventDefault();
     setError(null);
     try {
-      const result = await login.mutateAsync({ email, password });
+      const result = await login.mutateAsync({ email: email.trim(), password });
       if (result?.token) {
         setStoredAdminToken(result.token);
       }
@@ -56,6 +61,8 @@ export default function AdminLogin() {
     }
   }
 
+  const isSuperMasterActive = loginMode === "super_master";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-100 px-4 py-10">
       <div className="w-full max-w-md space-y-3">
@@ -70,59 +77,59 @@ export default function AdminLogin() {
         <Card className="w-full bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
           <CardHeader className="space-y-4 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shadow-sm">
-              {isSuperMasterIntent ? <Crown className="h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
+              {isSuperMasterActive ? <Crown className="h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
             </div>
             <div>
               <CardTitle className="text-2xl text-white font-serif">
-                {isSuperMasterIntent ? "Super Master Platform Console" : "Shop Administration"}
+                {isSuperMasterActive ? "Super Master Platform Console" : "Shop Administration"}
               </CardTitle>
               <p className="mt-1 text-xs text-neutral-400">
-                {isSuperMasterIntent
-                  ? "Authenticate to access central multi-tenant SaaS governance."
-                  : "Sign in to manage boutique catalog, inventory, and operations."}
+                {isSuperMasterActive
+                  ? "Authenticate with configured Super Master credentials to access central SaaS governance."
+                  : "Sign in with administrator credentials to manage boutique catalog, inventory, and operations."}
               </p>
+            </div>
+            {/* Login Mode Selector (Context toggle without credential prefill) */}
+            <div className="inline-flex rounded-lg border border-neutral-800 bg-neutral-950 p-1 text-xs mx-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginMode("super_master");
+                  if (!email && SUPER_MASTER_EMAIL) {
+                    setEmail(SUPER_MASTER_EMAIL);
+                  }
+                  setError(null);
+                }}
+                className={`px-3 py-1 rounded transition font-medium ${
+                  isSuperMasterActive
+                    ? "bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                👑 Super Master
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginMode("admin");
+                  setError(null);
+                }}
+                className={`px-3 py-1 rounded transition font-medium ${
+                  !isSuperMasterActive
+                    ? "bg-neutral-800 text-neutral-200 font-semibold"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                🛡️ Store Admin
+              </button>
             </div>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={submit}>
-              <div className="space-y-1.5 rounded-lg bg-neutral-950/80 p-3 text-xs border border-neutral-800">
-                <div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
-                  Select Role Credentials:
-                </div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail(SUPER_MASTER_EMAIL);
-                      setPassword("admin123");
-                    }}
-                    className={`px-2.5 py-1 rounded text-xs transition border ${
-                      email.toLowerCase() === SUPER_MASTER_EMAIL.toLowerCase()
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/50 font-medium"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    👑 Super Master ({SUPER_MASTER_EMAIL})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail("admin@freshflow.com");
-                      setPassword("admin123");
-                    }}
-                    className={`px-2.5 py-1 rounded text-xs transition border ${
-                      email.toLowerCase() === "admin@freshflow.com"
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/50 font-medium"
-                        : "bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white"
-                    }`}
-                  >
-                    Store Admin (admin@freshflow.com)
-                  </button>
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="admin-email" className="text-xs text-neutral-300">Email</Label>
+                <Label htmlFor="admin-email" className="text-xs text-neutral-300">
+                  {isSuperMasterActive ? "Super Master Email" : "Administrator Email"}
+                </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
                   <Input
@@ -131,6 +138,7 @@ export default function AdminLogin() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
+                    placeholder={isSuperMasterActive ? "supermaster@example.com" : "admin@freshflow.com"}
                     required
                     autoComplete="username"
                   />
@@ -146,18 +154,27 @@ export default function AdminLogin() {
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Enter password"
                     required
                     autoComplete="current-password"
                   />
                 </div>
               </div>
-              {error && <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded" role="alert">{error}</p>}
+              {error && (
+                <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded" role="alert">
+                  {error}
+                </p>
+              )}
               <Button
                 className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold text-sm h-10 shadow-lg shadow-amber-500/10"
                 type="submit"
                 disabled={login.isPending}
               >
-                {login.isPending ? "Signing in…" : isSuperMasterIntent ? "Open Super Master Console" : "Sign in to Dashboard"}
+                {login.isPending
+                  ? "Signing in…"
+                  : isSuperMasterActive
+                  ? "Open Super Master Console"
+                  : "Sign in to Dashboard"}
               </Button>
             </form>
           </CardContent>
