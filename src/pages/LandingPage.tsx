@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import {
   Menu,
@@ -15,6 +15,9 @@ import {
   Gift,
   Headphones,
   Check,
+  Crown,
+  Store,
+  AlertTriangle,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -343,16 +346,20 @@ export function getHeadlineLines(campaign: HeroCampaign): {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const params = useParams<{ tenantSlug?: string }>();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const isStorefrontExplicit = searchParams.get("storefront") === "true" || searchParams.get("preview") === "true";
+  const requestedTenant = params.tenantSlug || searchParams.get("tenant") || undefined;
+  const { user, isAuthenticated } = useAuth();
 
-  // Redirect authorized Super Master to central platform console rather than shop storefront
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && isSuperMaster(user) && !isStorefrontExplicit) {
-      navigate("/super-master", { replace: true });
-    }
-  }, [isAuthenticated, isLoading, user, navigate, isStorefrontExplicit]);
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: requestedTenant },
+    { retry: false }
+  );
+
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const isWebsiteA = Boolean(
+    tenant && (tenant.displayLabel === "Website A" || tenant.slug === "the-fragrance-store")
+  );
 
   const guestCart = useGuestCart();
   const { isOrderActive, activeOrders, activeCount } = usePlacedOrder();
@@ -384,13 +391,17 @@ export default function LandingPage() {
   }
   const utils = trpc.useUtils();
 
-  // Queries
+  // Queries - scoped strictly to this tenant's ID
   const productsQuery = trpc.product.list.useQuery(
     {
+      supplierId: tenant?.id,
       search: search.trim() || undefined,
       status: "active",
     },
-    { retry: false }
+    {
+      enabled: !!tenant?.id,
+      retry: false,
+    }
   );
 
   const cartQuery = trpc.cart.list.useQuery(undefined, {
@@ -416,8 +427,9 @@ export default function LandingPage() {
     return raw.filter((product) => !isFoodOrRestaurantProduct(product));
   }, [productsQuery.data]);
 
-  // Filtered illustrative demo items
+  // Filtered illustrative demo items - ONLY for Website A to preserve luxury customer experience
   const filteredDemoProducts = useMemo(() => {
+    if (!isWebsiteA) return [];
     let list = [...ILLUSTRATIVE_DEMO_FRAGRANCES];
     if (selectedFilter !== "all") {
       list = list.filter((p) => p.category === selectedFilter);
@@ -432,7 +444,7 @@ export default function LandingPage() {
       );
     }
     return list;
-  }, [selectedFilter, search]);
+  }, [isWebsiteA, selectedFilter, search]);
 
   function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -486,9 +498,143 @@ export default function LandingPage() {
     );
   }
 
+  // Loading state
+  if (storefrontQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="h-10 w-10 rounded-xs border border-[#C5A059]/40 bg-[#1B1B1B] p-1 flex items-center justify-center animate-pulse">
+          <Sparkles className="h-5 w-5 text-[#C5A059]" />
+        </div>
+        <p className="text-xs font-serif uppercase tracking-[0.2em] text-[#C5A059]">Curating Fragrance Boutique...</p>
+      </div>
+    );
+  }
+
+  // Unavailable Storefront: Not found
+  if (storefrontQuery.data?.status === "not_found") {
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+          {isAuthenticated && isSuperMaster(user) && (
+            <Link to="/super-master">
+              <Button variant="outline" size="sm" className="text-xs border-[#C5A059]/40 text-[#C5A059]">
+                Platform Console
+              </Button>
+            </Link>
+          )}
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+              <Store className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-serif text-white">Boutique Not Found</h2>
+            <p className="text-sm text-neutral-400">
+              The boutique storefront you are looking for does not exist or has been relocated.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+              {isAuthenticated && isSuperMaster(user) && (
+                <Link to="/super-master">
+                  <Button variant="outline" className="w-full border-neutral-700 text-neutral-300 text-xs">
+                    Return to Super Master Console
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Unavailable Storefront: Suspended or inactive
+  if (storefrontQuery.data?.status === "suspended") {
+    const suspended = storefrontQuery.data.tenant;
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+          {isAuthenticated && isSuperMaster(user) && (
+            <Link to="/super-master">
+              <Button variant="outline" size="sm" className="text-xs border-[#C5A059]/40 text-[#C5A059]">
+                Platform Console
+              </Button>
+            </Link>
+          )}
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400">
+                {suspended.displayLabel}
+              </span>
+              <h2 className="text-xl font-serif text-white">{suspended.name}</h2>
+            </div>
+            <p className="text-sm text-neutral-400">
+              This boutique storefront is currently suspended or undergoing curation. No catalog items are publicly available at this time.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+              {isAuthenticated && isSuperMaster(user) && (
+                <Link to="/super-master">
+                  <Button variant="outline" className="w-full border-neutral-700 text-neutral-300 text-xs">
+                    Return to Super Master Console
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col font-sans selection:bg-[#C5A059] selection:text-[#111111] pb-24 sm:pb-20">
       
+      {/* Super Master Session Banner (Preserves session and provides clear navigation back to console) */}
+      {isAuthenticated && isSuperMaster(user) && tenant && (
+        <div
+          id="super-master-storefront-banner"
+          className="bg-[#1C160C] border-b border-[#C5A059]/40 px-3 sm:px-6 py-2 text-xs flex flex-wrap items-center justify-between gap-2 text-amber-300 z-50 sticky top-0"
+        >
+          <div className="flex items-center gap-2">
+            <Crown className="w-4 h-4 text-[#C5A059] shrink-0" />
+            <span>
+              <strong>Super Master Preview:</strong> Viewing storefront for <strong>{tenant.displayLabel}</strong> ({tenant.name})
+            </span>
+          </div>
+          <Link to="/super-master" id="return-to-super-master-btn">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2.5 text-[11px] border-[#C5A059]/50 text-[#C5A059] hover:bg-[#C5A059]/20 font-medium cursor-pointer"
+            >
+              Return to Super Master Console
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* ====================================================================== */}
       {/* 1. MOBILE HEADER — SINGLE ROW (MATCHING WIREFRAME)                     */}
       {/* ====================================================================== */}
@@ -510,23 +656,23 @@ export default function LandingPage() {
 
             {/* 2. Store Logo + Wordmark */}
             <Link
-              to="/"
+              to={isWebsiteA ? "/" : `/store/${tenant?.slug || ""}`}
               className="flex items-center gap-2 group"
-              aria-label="The Fragrance Store - House of Brands"
+              aria-label={tenant?.name || "The Fragrance Store - House of Brands"}
             >
               <div className="h-7 w-7 rounded-xs overflow-hidden border border-[#C5A059]/50 bg-[#1B1B1B] p-0.5 shrink-0 group-hover:border-[#C5A059] transition-colors">
                 <img
-                  src="/fragrance/brand-mark.svg"
-                  alt="KTK Monogram Crest"
+                  src={tenant?.logo || "/fragrance/brand-mark.svg"}
+                  alt={tenant?.name || "KTK Monogram Crest"}
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex flex-col text-left">
                 <span className="font-serif text-xs sm:text-base lg:text-lg font-bold tracking-[0.14em] uppercase text-[#FDFBF7] group-hover:text-[#E0C895] transition-colors leading-tight whitespace-nowrap">
-                  The Fragrance Store
+                  {tenant?.name || "The Fragrance Store"}
                 </span>
                 <span className="text-[7.5px] sm:text-[9.5px] tracking-[0.28em] font-sans text-[#C5A059] uppercase leading-none font-semibold whitespace-nowrap">
-                  House of Brands
+                  {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : "House of Brands"}
                 </span>
               </div>
             </Link>
@@ -855,7 +1001,8 @@ export default function LandingPage() {
       {/* ====================================================================== */}
       {/* 2. CINEMATIC HERO BANNER (AUTO-ROTATING 3 CAMPAIGNS, NO INNER BORDERS) */}
       {/* ====================================================================== */}
-      <section className="relative bg-[#101010] text-[#FDFBF7] overflow-hidden border-b border-[#24221F]">
+      {isWebsiteA ? (
+        <section className="relative bg-[#101010] text-[#FDFBF7] overflow-hidden border-b border-[#24221F]">
         {/* Subtle radial ambient golden glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_70%_25%,rgba(197,160,89,0.18),rgba(16,16,16,0))]" />
         
@@ -950,7 +1097,33 @@ export default function LandingPage() {
 
           </div>
         </div>
-      </section>
+        </section>
+      ) : (
+        <section className="relative bg-[#101010] text-[#FDFBF7] overflow-hidden border-b border-[#24221F] py-10 sm:py-14">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_70%_25%,rgba(197,160,89,0.18),rgba(16,16,16,0))]" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-3">
+            <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-[#C5A059] font-bold">
+              {tenant?.displayLabel} • Boutique Storefront
+            </span>
+            <h1 className="font-serif text-2xl sm:text-4xl text-[#FDFBF7] font-medium tracking-tight">
+              {tenant?.name}
+            </h1>
+            {tenant?.description && (
+              <p className="text-xs sm:text-sm text-[#A8A196] max-w-lg mx-auto leading-relaxed">
+                {tenant.description}
+              </p>
+            )}
+            <div className="pt-2">
+              <Button
+                onClick={() => scrollToSection("featured-fragrances-section")}
+                className="h-10 px-6 bg-[#C5A059] hover:bg-[#D4AF37] text-[#111111] font-bold text-xs tracking-wider uppercase rounded-none"
+              >
+                Browse Fragrances
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ====================================================================== */}
       {/* 3. SHOP BY CATEGORY (2-COLUMN MOBILE GRID PER ASCII)                   */}
@@ -1162,8 +1335,21 @@ export default function LandingPage() {
                 );
               })}
             </div>
+          ) : !isWebsiteA ? (
+            /* Tenant without products: Render clean boutique empty state, NEVER merge products */
+            <div className="border border-[#2E2C29] bg-[#161616] p-8 text-center max-w-xl mx-auto space-y-3">
+              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-[#222222] text-[#C5A059] mx-auto">
+                <Store className="h-5 w-5" />
+              </div>
+              <h3 className="font-serif text-lg font-medium text-[#FDFBF7]">
+                {tenant?.name || "Boutique"} Catalog
+              </h3>
+              <p className="text-xs text-[#9E978C] max-w-sm mx-auto">
+                No fragrances are currently published for this boutique. Products added by the shop owner will appear here live.
+              </p>
+            </div>
           ) : (
-            /* B. Strict catalog rule implementation:
+            /* B. Strict catalog rule implementation for Website A:
                Real DB contains zero fragrance products.
                Provide polished catalog staging status + explicit demo preview mode */
             <div className="space-y-6">

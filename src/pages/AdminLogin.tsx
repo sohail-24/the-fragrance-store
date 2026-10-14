@@ -29,12 +29,15 @@ export default function AdminLogin() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      if (returnTo?.startsWith("/")) {
-        navigate(returnTo, { replace: true });
-      } else if (isSuperMaster(user)) {
-        navigate("/super-master", { replace: true });
+      if (isSuperMaster(user)) {
+        const target = returnTo?.startsWith("/super-master") ? returnTo : "/super-master";
+        navigate(target, { replace: true });
       } else {
-        navigate("/dashboard", { replace: true });
+        const target =
+          returnTo?.startsWith("/") && !returnTo.startsWith("/super-master")
+            ? returnTo
+            : "/dashboard";
+        navigate(target, { replace: true });
       }
     }
   }, [isAuthenticated, isLoading, user, navigate, returnTo]);
@@ -49,12 +52,15 @@ export default function AdminLogin() {
       }
       utils.auth.me.setData(undefined, result.user);
       await utils.auth.me.refetch();
-      if (returnTo?.startsWith("/")) {
-        navigate(returnTo, { replace: true });
-      } else if (isSuperMaster(result.user)) {
-        navigate("/super-master", { replace: true });
+      if (isSuperMaster(result.user)) {
+        const target = returnTo?.startsWith("/super-master") ? returnTo : "/super-master";
+        navigate(target, { replace: true });
       } else {
-        navigate("/dashboard", { replace: true });
+        const target =
+          returnTo?.startsWith("/") && !returnTo.startsWith("/super-master")
+            ? returnTo
+            : "/dashboard";
+        navigate(target, { replace: true });
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to sign in.");

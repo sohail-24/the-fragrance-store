@@ -139,11 +139,16 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/store" element={<LandingPage />} />
+        <Route path="/store/:tenantSlug" element={<LandingPage />} />
+        <Route path="/storefront" element={<LandingPage />} />
+        <Route path="/storefront/:tenantSlug" element={<LandingPage />} />
+        <Route path="/w/:tenantSlug" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         {/* Legacy customer login remains in source but is intentionally inactive. */}
         <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminEntryRedirect />} />
 
         {/* Dashboard routes with layout */}

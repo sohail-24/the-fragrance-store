@@ -27,6 +27,7 @@ function withoutUndefined<T extends Record<string, unknown>>(data: T) {
 type ProductFilters = {
   categoryId?: number;
   supplierId?: number;
+  tenantSlug?: string;
   status?: string;
   organic?: boolean;
   grade?: string;
@@ -65,6 +66,9 @@ function productFilterConditions(filters?: ProductFilters): SQL[] {
   }
   if (filters?.supplierId) {
     conditions.push(eq(products.supplierId, filters.supplierId));
+  }
+  if (filters?.tenantSlug) {
+    conditions.push(eq(companies.slug, filters.tenantSlug));
   }
   if (filters?.organic !== undefined) {
     conditions.push(eq(products.organic, filters.organic));

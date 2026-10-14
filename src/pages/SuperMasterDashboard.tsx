@@ -585,7 +585,13 @@ export default function SuperMasterDashboard() {
                             <span className="font-mono text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
                               {tenant.displayLabel || "Website"}
                             </span>
-                            <h4 className="text-sm font-semibold text-white truncate max-w-[150px]">{tenant.name}</h4>
+                            <Link
+                              to={`/store/${tenant.slug}`}
+                              className="text-sm font-semibold text-white truncate max-w-[150px] hover:text-amber-400 hover:underline"
+                              title={`Open ${tenant.displayLabel} Storefront`}
+                            >
+                              {tenant.name}
+                            </Link>
                           </div>
                           <span className="text-[11px] font-mono text-neutral-400">ID: #{tenant.id} • {tenant.slug}</span>
                         </div>
@@ -618,17 +624,29 @@ export default function SuperMasterDashboard() {
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-neutral-400 pt-1">
-                      <div className="truncate max-w-[160px] text-[11px]">
+                      <div className="truncate max-w-[130px] text-[11px]">
                         <span className="text-neutral-500">Owner:</span> {tenant.owner?.name ?? "Unassigned"}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setInspectingTenant(tenant)}
-                        className="h-6 px-2 text-[11px] text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                      >
-                        Details
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Link to={`/store/${tenant.slug}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                            title={`Open ${tenant.displayLabel} Storefront`}
+                          >
+                            Storefront
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setInspectingTenant(tenant)}
+                          className="h-6 px-2 text-[11px] text-neutral-300 hover:text-white hover:bg-neutral-800"
+                        >
+                          Details
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -742,9 +760,15 @@ export default function SuperMasterDashboard() {
                           <span className="font-mono text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
                             {tenant.displayLabel || "Website"}
                           </span>
-                          <CardTitle className="text-base font-semibold text-white truncate">
-                            {tenant.name}
-                          </CardTitle>
+                          <Link
+                            to={`/store/${tenant.slug}`}
+                            className="hover:text-amber-400 hover:underline transition"
+                            title={`Open ${tenant.displayLabel} Storefront`}
+                          >
+                            <CardTitle className="text-base font-semibold text-white truncate cursor-pointer hover:text-amber-400">
+                              {tenant.name}
+                            </CardTitle>
+                          </Link>
                         </div>
                         <CardDescription className="text-xs font-mono text-neutral-400 truncate mt-1">
                           ID: #{tenant.id} • slug: {tenant.slug}
@@ -935,14 +959,16 @@ export default function SuperMasterDashboard() {
                     >
                       Details
                     </Button>
-                    <Link to={`/products?supplierId=${tenant.id}`}>
+                    <Link
+                      to={`/store/${tenant.slug}`}
+                    >
                       <Button
-                        variant="outline"
                         size="sm"
-                        className="text-xs border-neutral-800 bg-neutral-950 hover:bg-neutral-800 h-7 px-2"
-                        title="Open shop catalog view"
+                        className="text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold h-7 px-2.5 flex items-center gap-1.5"
+                        title={`Open ${tenant.displayLabel} Storefront (${tenant.name})`}
                       >
-                        <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Storefront</span>
                       </Button>
                     </Link>
                   </div>

@@ -9,6 +9,7 @@ import {
   findCompanyById,
   findCompanyBySlug,
   searchCompanies,
+  resolvePublicStorefront,
 } from "./queries/companies";
 
 function canAccessCompany(input: {
@@ -23,6 +24,19 @@ function canAccessCompany(input: {
 }
 
 export const companyRouter = createRouter({
+  storefront: publicQuery
+    .input(
+      z
+        .object({
+          slug: z.string().optional(),
+          id: z.number().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ input }) => {
+      return resolvePublicStorefront(input);
+    }),
+
   default: publicQuery.query(async () => {
     return ensureDefaultBusiness();
   }),

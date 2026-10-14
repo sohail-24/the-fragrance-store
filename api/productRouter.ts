@@ -125,6 +125,7 @@ const productListFilterSchema = z
   .object({
     categoryId: z.number().optional(),
     supplierId: z.number().optional(),
+    tenantSlug: z.string().optional(),
     status: z.string().optional(),
     organic: z.boolean().optional(),
     grade: z.string().optional(),
