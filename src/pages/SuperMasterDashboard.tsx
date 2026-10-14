@@ -49,6 +49,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { isSuperMaster } from "@/lib/roles";
+import { indexToAlphabeticalLabel } from "@/lib/tenantLabels";
 
 export default function SuperMasterDashboard() {
   const { user } = useAuth();
@@ -214,6 +215,7 @@ export default function SuperMasterDashboard() {
       const matchesSearch =
         !q ||
         t.name.toLowerCase().includes(q) ||
+        (t.displayLabel && t.displayLabel.toLowerCase().includes(q)) ||
         t.slug.toLowerCase().includes(q) ||
         (t.email && t.email.toLowerCase().includes(q)) ||
         (t.website && t.website.toLowerCase().includes(q)) ||
@@ -578,9 +580,14 @@ export default function SuperMasterDashboard() {
                             <Store className="w-4 h-4 text-amber-400" />
                           )}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-white truncate max-w-[170px]">{tenant.name}</h4>
-                          <span className="text-[11px] font-mono text-amber-500/80">ID: #{tenant.id} • {tenant.slug}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                              {tenant.displayLabel || "Website"}
+                            </span>
+                            <h4 className="text-sm font-semibold text-white truncate max-w-[150px]">{tenant.name}</h4>
+                          </div>
+                          <span className="text-[11px] font-mono text-neutral-400">ID: #{tenant.id} • {tenant.slug}</span>
                         </div>
                       </div>
                       <Badge
@@ -731,10 +738,15 @@ export default function SuperMasterDashboard() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <CardTitle className="text-base font-semibold text-white truncate">
-                          {tenant.name}
-                        </CardTitle>
-                        <CardDescription className="text-xs font-mono text-amber-500/80 truncate">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                            {tenant.displayLabel || "Website"}
+                          </span>
+                          <CardTitle className="text-base font-semibold text-white truncate">
+                            {tenant.name}
+                          </CardTitle>
+                        </div>
+                        <CardDescription className="text-xs font-mono text-neutral-400 truncate mt-1">
                           ID: #{tenant.id} • slug: {tenant.slug}
                         </CardDescription>
                       </div>
@@ -994,8 +1006,17 @@ export default function SuperMasterDashboard() {
                   <div className="space-y-1.5 bg-neutral-950 p-2.5 rounded border border-neutral-800/80 text-xs">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-neutral-500">Assigned Website:</span>
-                      <span className="font-semibold text-neutral-200">
-                        {assignedTenant ? assignedTenant.name : "Unassigned"}
+                      <span className="font-semibold text-neutral-200 flex items-center gap-1.5">
+                        {assignedTenant ? (
+                          <>
+                            <span className="font-mono text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                              {assignedTenant.displayLabel || "Website"}
+                            </span>
+                            <span className="truncate max-w-[140px]">{assignedTenant.name}</span>
+                          </>
+                        ) : (
+                          <span className="text-neutral-500 italic">Unassigned</span>
+                        )}
                       </span>
                     </div>
                     {owner.phone && (
@@ -1040,8 +1061,13 @@ export default function SuperMasterDashboard() {
                   return (
                     <div key={t.id} className="space-y-1.5 bg-neutral-950 p-3 rounded border border-neutral-800">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-white">{t.name}</span>
-                        <span className="font-mono text-amber-400 font-semibold">₹{t.totalRevenue}</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-mono text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 shrink-0">
+                            {t.displayLabel || "Website"}
+                          </span>
+                          <span className="font-medium text-white truncate">{t.name}</span>
+                        </div>
+                        <span className="font-mono text-amber-400 font-semibold shrink-0">₹{t.totalRevenue}</span>
                       </div>
                       <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden">
                         <div
@@ -1129,7 +1155,10 @@ export default function SuperMasterDashboard() {
                 {tenants.map((t) => (
                   <div key={t.id} className="flex items-center justify-between bg-neutral-950 p-3 rounded border border-neutral-800 text-xs">
                     <div className="flex items-center gap-2">
-                      <Store className="w-4 h-4 text-amber-400" />
+                      <Store className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="font-mono text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 shrink-0">
+                        {t.displayLabel || "Website"}
+                      </span>
                       <span className="font-medium text-white">{t.name}</span>
                       <span className="text-neutral-500 font-mono text-[11px]">({t.slug})</span>
                     </div>
@@ -1353,6 +1382,13 @@ export default function SuperMasterDashboard() {
               </div>
             )}
 
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs">
+              <span className="text-neutral-400">Assigned Platform Label:</span>
+              <span className="font-mono text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                {indexToAlphabeticalLabel(tenants.length)}
+              </span>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="create-name" className="text-xs text-neutral-300">
@@ -1501,9 +1537,12 @@ export default function SuperMasterDashboard() {
       <Dialog open={!!editingTenant} onOpenChange={(open) => !open && setEditingTenant(null)}>
         <DialogContent className="bg-neutral-900 border-neutral-800 text-neutral-100 max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg text-white flex items-center gap-2">
+            <DialogTitle className="text-lg text-white flex items-center gap-2 flex-wrap">
               <Pencil className="w-5 h-5 text-amber-400" />
-              Edit Website Settings: {editingTenant?.name}
+              <span className="font-mono text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                {editingTenant?.displayLabel || "Website"}
+              </span>
+              <span>Edit Settings: {editingTenant?.name}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral-400">
               Update branding profile, boutique location, and operating status.
@@ -1655,7 +1694,7 @@ export default function SuperMasterDashboard() {
               Assign Shop Owner
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral-400">
-              Assign a registered administrator to manage <span className="text-white font-semibold">{assigningTenant?.name}</span>.
+              Assign a registered administrator to manage <span className="font-mono text-amber-400 font-bold">{assigningTenant?.displayLabel}:</span> <span className="text-white font-semibold">{assigningTenant?.name}</span>.
             </DialogDescription>
           </DialogHeader>
 
@@ -1717,9 +1756,12 @@ export default function SuperMasterDashboard() {
       <Dialog open={!!inspectingTenant} onOpenChange={(open) => !open && setInspectingTenant(null)}>
         <DialogContent className="bg-neutral-900 border-neutral-800 text-neutral-100 max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-lg text-white flex items-center gap-2">
+            <DialogTitle className="text-lg text-white flex items-center gap-2 flex-wrap">
               <Store className="w-5 h-5 text-amber-400" />
-              Website Profile: {inspectingTenant?.name}
+              <span className="font-mono text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                {inspectingTenant?.displayLabel || "Website"}
+              </span>
+              <span>Website Profile: {inspectingTenant?.name}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral-400">
               Verified platform attributes, tenant routing, and catalog usage metrics.
@@ -1729,6 +1771,14 @@ export default function SuperMasterDashboard() {
           {inspectingTenant && (
             <div className="space-y-4 pt-2 text-xs">
               <div className="grid grid-cols-2 gap-3 bg-neutral-950 p-3 rounded-lg border border-neutral-800">
+                <div>
+                  <span className="text-[10px] text-neutral-500 uppercase block">Platform Label</span>
+                  <span className="font-mono text-amber-400 font-bold">{inspectingTenant.displayLabel || "Website"}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-500 uppercase block">Business Name</span>
+                  <span className="font-semibold text-white truncate block">{inspectingTenant.name}</span>
+                </div>
                 <div>
                   <span className="text-[10px] text-neutral-500 uppercase block">Shop ID</span>
                   <span className="font-mono text-white">#{inspectingTenant.id}</span>

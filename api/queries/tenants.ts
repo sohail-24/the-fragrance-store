@@ -17,7 +17,19 @@ export type TenantSummary = Company & {
   orderCount: number;
   totalRevenue: string;
   owner: TenantOwner | null;
+  displayLabel: string;
 };
+
+export function indexToAlphabeticalLabel(index: number): string {
+  if (index < 0) return "Website A";
+  let label = "";
+  let n = index;
+  do {
+    label = String.fromCharCode(65 + (n % 26)) + label;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return `Website ${label}`;
+}
 
 export type PlatformSaaSStats = {
   totalTenants: number;
@@ -51,6 +63,19 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
   try {
     const allCompanies: Company[] = await db.query.companies.findMany({
       orderBy: [desc(companies.createdAt)],
+    });
+
+    // Stable alphabetical mapping (Website A, Website B, Website C...) based on creation order
+    const chronological = [...allCompanies].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
+      if (timeA !== timeB) return timeA - timeB;
+      return a.id - b.id;
+    });
+
+    const labelMap = new Map<number, string>();
+    chronological.forEach((c, idx) => {
+      labelMap.set(c.id, indexToAlphabeticalLabel(idx));
     });
 
     const allUsers = await db.query.users.findMany();
@@ -134,12 +159,15 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
         totalOrdersCount += orderCount;
         totalRevenueSum += revenue;
 
+        const displayLabel = labelMap.get(company.id) || indexToAlphabeticalLabel(0);
+
         return {
           ...company,
           productCount,
           orderCount,
           totalRevenue: revenue.toFixed(2),
           owner,
+          displayLabel,
         };
       })
     );
@@ -179,6 +207,7 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
           orderCount: 0,
           totalRevenue: "0.00",
           owner: null,
+          displayLabel: "Website A",
         },
       ],
     };
@@ -219,6 +248,7 @@ export async function listTenants(filter?: {
     list = list.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
+        t.displayLabel.toLowerCase().includes(q) ||
         t.slug.toLowerCase().includes(q) ||
         (t.email && t.email.toLowerCase().includes(q)) ||
         (t.description && t.description.toLowerCase().includes(q))

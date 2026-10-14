@@ -532,6 +532,62 @@ export default function LandingPage() {
             </Link>
           </div>
 
+          {/* Desktop Customer Navigation (Home, Shop, Categories, Cart, Account) */}
+          <nav
+            aria-label="Desktop Customer Navigation"
+            className="hidden md:flex items-center gap-3.5 lg:gap-6 mx-3 text-xs font-sans tracking-wider uppercase"
+          >
+            <Link
+              to="/"
+              onClick={(e) => {
+                if (window.location.pathname === "/") {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+              className="text-[#C5A059] font-semibold hover:text-[#E0C895] transition-colors py-1"
+            >
+              Home
+            </Link>
+            <Link
+              to="/products"
+              className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1"
+            >
+              Shop
+            </Link>
+            <a
+              href="/#categories-section"
+              onClick={(e) => {
+                if (window.location.pathname === "/") {
+                  e.preventDefault();
+                  const el = document.getElementById("categories-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1"
+            >
+              Categories
+            </a>
+            <Link
+              to="/cart"
+              className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1 flex items-center gap-1.5"
+            >
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A059] px-1 text-[9px] font-bold text-[#111111]">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to={isSuperMaster(user) ? "/super-master" : isAuthenticated ? "/dashboard" : "/admin/login"}
+              className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1 flex items-center gap-1"
+            >
+              <UserRound className="h-3.5 w-3.5 text-[#C5A059]" />
+              <span>{isSuperMaster(user) ? "Console" : isAuthenticated ? (user?.name?.split(" ")[0] ?? "Account") : "Account"}</span>
+            </Link>
+          </nav>
+
           {/* 3. FLEXIBLE EMPTY SPACE (Pushes right action icons to the far right edge) */}
           <div className="flex-1 min-w-2" />
 
@@ -547,25 +603,17 @@ export default function LandingPage() {
               </Link>
             )}
 
-            {/* Super Master Console Navigation Entry for authorized Super Master or directs unauthenticated to login */}
+            {/* Super Master Console Navigation Entry for authorized Super Master (accessible on mobile & desktop) */}
             {isSuperMaster(user) ? (
               <Link
                 to="/super-master"
                 id="header-super-master-link"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors mr-1 shadow-xs"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors mr-1 shadow-xs"
+                title="Super Master Console"
               >
                 <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
-                <span>Super Master Console</span>
-              </Link>
-            ) : !isAuthenticated ? (
-              <Link
-                to="/admin/login?returnTo=%2Fsuper-master"
-                id="header-super-master-link"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neutral-900/80 border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs font-medium tracking-wide transition-colors mr-1"
-                title="Sign in to Super Master Console"
-              >
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
-                <span>Super Master Console</span>
+                <span className="hidden xs:inline">Super Master Console</span>
+                <span className="xs:hidden">Console</span>
               </Link>
             ) : null}
 
@@ -787,16 +835,6 @@ export default function LandingPage() {
                       id="mobile-drawer-super-master-link"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-1 text-amber-400 font-semibold flex items-center gap-1.5"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-amber-400" />
-                      <span>Super Master Console</span>
-                    </Link>
-                  ) : !isAuthenticated ? (
-                    <Link
-                      to="/admin/login?returnTo=%2Fsuper-master"
-                      id="mobile-drawer-super-master-link"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="py-1 text-amber-400/90 font-medium flex items-center gap-1.5"
                     >
                       <ShieldCheck className="h-4 w-4 text-amber-400" />
                       <span>Super Master Console</span>

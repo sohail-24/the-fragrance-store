@@ -5,7 +5,7 @@ import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { addGuestCartItem, useGuestCart } from "@/lib/guestCart";
 import { formatCurrency, toNumber, unitLabels } from "@/lib/i18n";
-import { getAppRole } from "@/lib/roles";
+import { getAppRole, isSuperMaster } from "@/lib/roles";
 import { MetricCard } from "@/components/freshflow/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
   Package,
   Plus,
   Search,
+  ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
   Sparkles,
@@ -225,9 +226,13 @@ function BuyerMarketplace() {
     sort === "price_asc" || sort === "price_desc" ? "price" : "newest";
   const apiSortOrder: "asc" | "desc" = sort === "price_asc" ? "asc" : "desc";
 
+  const supplierIdParam = searchParams.get("supplierId");
+  const targetSupplierId = supplierIdParam ? Number(supplierIdParam) : undefined;
+
   const productsQuery = trpc.product.list.useQuery(
     {
       categoryId: isInvalidCategory ? -1 : targetCategoryId,
+      supplierId: targetSupplierId,
       search: search.trim() || undefined,
       status: "active",
       sortBy: apiSortBy,
@@ -314,9 +319,65 @@ function BuyerMarketplace() {
               </div>
             </Link>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Desktop Navigation Menu (Home, Shop, Categories, Cart, Account) */}
+            <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm tracking-wider uppercase font-sans">
               <Link
-                to="/admin/login"
+                to="/"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
+              >
+                Home
+              </Link>
+              <Link
+                to="/products"
+                className="text-[#C5A059] font-bold transition-colors py-1"
+              >
+                Shop
+              </Link>
+              <Link
+                to="/products"
+                onClick={() => {
+                  setSearchParams({});
+                  setSearch("");
+                }}
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
+              >
+                Categories
+              </Link>
+              <Link
+                to="/cart"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1.5"
+              >
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A059] px-1 text-[9px] font-bold text-black">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to={isSuperMaster(user) ? "/super-master" : user ? "/dashboard" : "/admin/login"}
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1"
+              >
+                <UserRound className="h-3.5 w-3.5 text-[#C5A059]" />
+                <span>{isSuperMaster(user) ? "Console" : user ? (user.name?.split(" ")[0] ?? "Account") : "Account"}</span>
+              </Link>
+            </nav>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {isSuperMaster(user) && (
+                <Link
+                  to="/super-master"
+                  id="header-super-master-link"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-600 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors shadow-xs"
+                  title="Super Master Console"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                  <span className="hidden xs:inline">Super Master Console</span>
+                  <span className="xs:hidden">Console</span>
+                </Link>
+              )}
+              <Link
+                to={isSuperMaster(user) ? "/super-master" : user ? "/dashboard" : "/admin/login"}
                 id="header-user-button"
                 aria-label="Account Login"
                 className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
@@ -458,29 +519,86 @@ function BuyerMarketplace() {
             </div>
           </button>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Link
-              to="/admin/login"
-              id="header-user-button"
-              aria-label="Account Login"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
-            >
-              <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
-            </Link>
-            <Link
-              to="/cart"
-              id="header-cart-button"
-              aria-label="View shopping cart"
-              className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
-            >
-              <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white shadow-xs">
-                  {cartCount}
-                </span>
+            {/* Desktop Navigation Menu (Home, Shop, Categories, Cart, Account) */}
+            <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm tracking-wider uppercase font-sans">
+              <Link
+                to="/"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
+              >
+                Home
+              </Link>
+              <Link
+                to="/products"
+                className="text-[#C5A059] font-bold transition-colors py-1"
+              >
+                Shop
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchParams({});
+                  setSearch("");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 uppercase"
+              >
+                Categories
+              </button>
+              <Link
+                to="/cart"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1.5"
+              >
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A059] px-1 text-[9px] font-bold text-black">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to={isSuperMaster(user) ? "/super-master" : user ? "/dashboard" : "/admin/login"}
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1"
+              >
+                <UserRound className="h-3.5 w-3.5 text-[#C5A059]" />
+                <span>{isSuperMaster(user) ? "Console" : user ? (user.name?.split(" ")[0] ?? "Account") : "Account"}</span>
+              </Link>
+            </nav>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {isSuperMaster(user) && (
+                <Link
+                  to="/super-master"
+                  id="header-super-master-link"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-600 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors shadow-xs"
+                  title="Super Master Console"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                  <span className="hidden xs:inline">Super Master Console</span>
+                  <span className="xs:hidden">Console</span>
+                </Link>
               )}
-            </Link>
-          </div>
+              <Link
+                to={isSuperMaster(user) ? "/super-master" : user ? "/dashboard" : "/admin/login"}
+                id="header-user-button"
+                aria-label="Account Login"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
+              >
+                <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
+              </Link>
+              <Link
+                to="/cart"
+                id="header-cart-button"
+                aria-label="View shopping cart"
+                className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
+              >
+                <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white shadow-xs">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            </div>
         </div>
       </header>
 
@@ -932,6 +1050,10 @@ export function ProductCard({
   );
 }
 function OwnerProductCatalog() {
+  const [searchParams] = useSearchParams();
+  const supplierIdParam = searchParams.get("supplierId");
+  const targetSupplierId = supplierIdParam ? Number(supplierIdParam) : undefined;
+
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -943,6 +1065,7 @@ function OwnerProductCatalog() {
     {
       search: search || undefined,
       categoryId: selectedCategory !== "all" ? Number(selectedCategory) : undefined,
+      supplierId: targetSupplierId,
       status: selectedStatus !== "all" ? selectedStatus : undefined,
       sortBy: "newest",
     },
@@ -986,13 +1109,52 @@ function OwnerProductCatalog() {
     }
   };
 
+  const companyQuery = trpc.company.byId.useQuery(
+    { id: targetSupplierId ?? 0 },
+    { enabled: !!targetSupplierId, retry: false }
+  );
+
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5">
+      {targetSupplierId && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-200">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs font-bold text-amber-400 px-2.5 py-1 rounded bg-amber-500/20 border border-amber-500/40 shrink-0">
+              {companyQuery.data ? `ID #${companyQuery.data.id}` : `Tenant #${targetSupplierId}`}
+            </span>
+            <div>
+              <div className="font-semibold text-white text-sm">
+                Isolated Store Context: {companyQuery.data?.name ?? `Website #${targetSupplierId}`}
+              </div>
+              <p className="text-[11px] text-neutral-400">
+                Displaying partitioned boutique inventory. Multi-tenant security ensures isolated catalog management.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link to="/super-master/websites">
+              <Button size="sm" variant="outline" className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 text-xs h-8">
+                &larr; Platform Websites
+              </Button>
+            </Link>
+            <Link to="/super-master">
+              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs h-8">
+                Platform Console
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <section className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Product Catalog</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            {targetSupplierId && companyQuery.data ? `${companyQuery.data.name} — Catalog` : "Product Catalog"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage Tex’s Chicken & Burgers food menu items, categories, pricing, and availability.
+            {targetSupplierId && companyQuery.data
+              ? `Manage catalog items, pricing, notes, and availability for ${companyQuery.data.name}.`
+              : "Manage boutique fragrance items, collections, pricing, and availability."}
           </p>
         </div>
         <Link to="/products/new">

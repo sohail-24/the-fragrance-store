@@ -39,6 +39,11 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
     }
   }
 
+  // Do not show the customer shopping bottom navigation to Super Master users while they are in the platform console.
+  if (isSuperMaster(user) && window.location.pathname.startsWith("/super-master")) {
+    return null;
+  }
+
   return (
     <nav
       id="mobile-bottom-nav"

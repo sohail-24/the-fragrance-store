@@ -123,17 +123,16 @@ describe("Placed Order Snapshot & 30-Minute Window", () => {
     const order = createPlacedOrderSnapshot(
       [{ id: 1, productName: "Fries", unitPrice: 2.5, quantity: 1 }],
       2.5,
-      "+1 9121969239",
+      "+99 8765432109",
       "Pay at Counter"
     );
 
     const serialized = JSON.stringify(order);
-    expect(order.ticketNumber).toBe("T 9239");
-    expect(order.lastFour).toBe("9239");
-    expect(serialized).not.toContain("+1");
-    expect(serialized).not.toContain("912");
-    expect(serialized).not.toContain("196");
-    expect(serialized).not.toContain("9121969239");
+    expect(order.ticketNumber).toBe("T 2109");
+    expect(order.lastFour).toBe("2109");
+    expect(serialized).not.toContain("+99");
+    expect(serialized).not.toContain("876543");
+    expect(serialized).not.toContain("8765432109");
   });
 
   it("calculates the 30-minute visibility window accurately based on actual createdAt timestamp", () => {

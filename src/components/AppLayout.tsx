@@ -41,6 +41,7 @@ import {
   Bell,
   Boxes,
   Building2,
+  ChevronRight,
   ClipboardList,
   Command,
   CreditCard,
@@ -70,8 +71,15 @@ import {
   Users,
   Warehouse,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useTheme } from "@/providers/theme";
-import { type ElementType } from "react";
+import { useState, type ElementType } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 
 type NavItem = {
@@ -208,6 +216,7 @@ function AppLayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, toggleSidebar, setOpenMobile } = useSidebar();
+  const [isMobilePlatformDrawerOpen, setIsMobilePlatformDrawerOpen] = useState(false);
   const isCollapsed = state === "collapsed";
   const companyQuery = trpc.company.byId.useQuery(
     { id: user?.companyId ?? 0 },
@@ -333,6 +342,18 @@ function AppLayoutContent() {
       <SidebarInset className="min-w-0 max-w-full overflow-x-hidden bg-background">
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 lg:px-6">
           <SidebarTrigger className="h-9 w-9 md:hidden" />
+          {showSuperMasterNav && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMobilePlatformDrawerOpen(true)}
+              className="md:hidden flex items-center gap-1.5 h-8 px-2.5 text-xs text-amber-400 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 font-semibold tracking-wide"
+              aria-label="Open Platform Navigation Menu"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+              <span>Platform Menu</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -417,26 +438,56 @@ function AppLayoutContent() {
         <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around bg-card border-t pb-safe md:hidden shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.05)]">
           {showSuperMasterNav ? (
             <>
-              <Link to="/super-master" className={`flex flex-col items-center gap-1 ${location.pathname === "/super-master" ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+              <Link
+                to="/super-master"
+                className={`flex flex-col items-center gap-1 ${
+                  location.pathname === "/super-master" ? "text-amber-400 font-semibold" : "text-muted-foreground"
+                }`}
+              >
                 <LayoutDashboard className="h-5 w-5" />
                 <span className="text-[10px] font-medium">Overview</span>
               </Link>
-              <Link to="/super-master/websites" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/websites") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+              <Link
+                to="/super-master/websites"
+                className={`flex flex-col items-center gap-1 ${
+                  location.pathname.startsWith("/super-master/websites") || location.pathname.startsWith("/super-master/tenants")
+                    ? "text-amber-400 font-semibold"
+                    : "text-muted-foreground"
+                }`}
+              >
                 <Globe className="h-5 w-5" />
                 <span className="text-[10px] font-medium">Websites</span>
               </Link>
-              <Link to="/super-master/owners" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/owners") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
+              <Link
+                to="/super-master/owners"
+                className={`flex flex-col items-center gap-1 ${
+                  location.pathname.startsWith("/super-master/owners") ? "text-amber-400 font-semibold" : "text-muted-foreground"
+                }`}
+              >
                 <Users className="h-5 w-5" />
                 <span className="text-[10px] font-medium">Owners</span>
               </Link>
-              <Link to="/super-master/monitoring" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/monitoring") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
-                <Activity className="h-5 w-5" />
-                <span className="text-[10px] font-medium">Health</span>
+              <Link
+                to="/super-master/analytics"
+                className={`flex flex-col items-center gap-1 ${
+                  location.pathname.startsWith("/super-master/analytics") ? "text-amber-400 font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                <BarChart3 className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Analytics</span>
               </Link>
-              <Link to="/super-master/settings" className={`flex flex-col items-center gap-1 ${location.pathname.includes("/settings") ? "text-amber-400 font-semibold" : "text-muted-foreground"}`}>
-                <Settings className="h-5 w-5" />
-                <span className="text-[10px] font-medium">Settings</span>
-              </Link>
+              <button
+                type="button"
+                onClick={() => setIsMobilePlatformDrawerOpen(true)}
+                className="flex flex-col items-center gap-1 text-amber-400 hover:text-amber-300 transition-colors focus:outline-none"
+                aria-label="Open Full Platform Menu (8 Sections)"
+              >
+                <div className="relative">
+                  <SlidersHorizontal className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                </div>
+                <span className="text-[10px] font-semibold">All Menu</span>
+              </button>
             </>
           ) : (
             <>
@@ -466,6 +517,91 @@ function AppLayoutContent() {
             </>
           )}
         </div>
+
+        {/* Mobile Platform Drawer containing all 8 Platform Governance destinations */}
+        <Sheet open={isMobilePlatformDrawerOpen} onOpenChange={setIsMobilePlatformDrawerOpen}>
+          <SheetContent
+            side="left"
+            className="w-[85vw] max-w-sm p-0 bg-neutral-950 border-r border-neutral-800 text-neutral-100 flex flex-col justify-between z-50 overflow-hidden"
+          >
+            <div className="overflow-y-auto flex-1 p-4 space-y-4">
+              <SheetHeader className="pb-3 border-b border-neutral-800 text-left">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-black border border-amber-500/40 p-1 flex items-center justify-center shrink-0">
+                    <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-full w-full object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <SheetTitle className="text-sm font-bold text-white tracking-wide truncate">
+                      The Fragrance Store
+                    </SheetTitle>
+                    <SheetDescription className="text-[11px] font-semibold text-amber-400 truncate">
+                      SaaS Platform Control Center
+                    </SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+
+              <div className="space-y-1">
+                <div className="px-2 text-[10px] uppercase font-bold tracking-widest text-neutral-500 pb-1.5">
+                  Platform Governance (8 Sections)
+                </div>
+                {superMasterNavigation[0].items.map((item) => {
+                  const active = isActive(item.path);
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.path}
+                      type="button"
+                      onClick={() => {
+                        navigate(item.path);
+                        setIsMobilePlatformDrawerOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all ${
+                        active
+                          ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold"
+                          : "text-neutral-300 hover:text-white hover:bg-neutral-900 border border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`p-1.5 rounded-md shrink-0 ${
+                            active ? "bg-amber-500/20 text-amber-400" : "bg-neutral-900 text-neutral-400"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium truncate">{item.label}</div>
+                          <div className="text-[10px] text-neutral-500 truncate">{item.path}</div>
+                        </div>
+                      </div>
+                      <ChevronRight className={`h-4 w-4 shrink-0 ${active ? "text-amber-400" : "text-neutral-600"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-neutral-800 bg-neutral-950/95 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-neutral-400">
+                <span>Authenticated as:</span>
+                <span className="font-semibold text-white">Super Master</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsMobilePlatformDrawerOpen(false);
+                  logout();
+                }}
+                className="w-full text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+              >
+                <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                Sign Out
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </SidebarInset>
     </>
   );
