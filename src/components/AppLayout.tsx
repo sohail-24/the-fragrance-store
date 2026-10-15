@@ -390,7 +390,7 @@ function AppLayoutContent() {
                   <span>Platform Console</span>
                 </div>
                 <Link
-                  to="/?storefront=true"
+                  to="/store/the-fragrance-store"
                   className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-neutral-400 hover:text-amber-400 hover:bg-neutral-900 border border-neutral-800 rounded transition-colors"
                   title="Preview Customer Storefront"
                 >

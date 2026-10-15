@@ -18,8 +18,6 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Info from "./pages/Info";
 import Payment from "./pages/Payment";
-import Bill from "./pages/Bill";
-import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import Invoices from "./pages/Invoices";
@@ -110,7 +108,7 @@ function SuperMasterRoute({ children }: { children: ReactNode }) {
     const returnTo = `${location.pathname}${location.search}`;
     return (
       <Navigate
-        to={`/admin/login?returnTo=${encodeURIComponent(returnTo)}`}
+        to={`/?returnTo=${encodeURIComponent(returnTo)}`}
         replace
       />
     );
@@ -138,17 +136,18 @@ function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public routes */}
+        {/* Root route: Dedicated Super Master Platform Console Login */}
         <Route path="/" element={<AdminLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/store" element={<LandingPage />} />
+        <Route path="/super-master/login" element={<AdminLogin />} />
+        <Route path="/store" element={<Navigate to="/store/the-fragrance-store" replace />} />
         <Route path="/store/:tenantSlug" element={<LandingPage />} />
-        <Route path="/storefront" element={<LandingPage />} />
+        <Route path="/storefront" element={<Navigate to="/store/the-fragrance-store" replace />} />
         <Route path="/storefront/:tenantSlug" element={<LandingPage />} />
         <Route path="/w/:tenantSlug" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         {/* Legacy customer login remains in source but is intentionally inactive. */}
-        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={<Navigate to="/admin/login" replace />} />
         <Route path="/admin" element={<AdminEntryRedirect />} />
 
         {/* Dashboard routes with layout */}
@@ -270,8 +269,8 @@ function AppRoutes() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/info" element={<Info />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/bill" element={<Bill />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/bill" element={<Navigate to="/orders" replace />} />
+          <Route path="/checkout" element={<Navigate to="/cart" replace />} />
           <Route
             path="/orders"
             element={

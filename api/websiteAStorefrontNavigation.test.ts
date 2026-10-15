@@ -39,7 +39,7 @@ describe("Phase 4 — Website A Storefront & Multi-Tenant Navigation Regression 
   });
 
   it("3. Super Master vs Shop Admin login navigation separation", () => {
-    const superMasterUser = { email: "master@thefragrancestore.com", role: "admin" };
+    const superMasterUser = { email: "mdsohail88008@gmail.com", role: "admin" };
     const shopAdminUser = { email: "admin@freshflow.com", role: "admin", companyId: 1 };
 
     // Super Master intent
@@ -133,5 +133,138 @@ describe("Phase 4 — Website A Storefront & Multi-Tenant Navigation Regression 
 
     // Tenant 1 admin CANNOT access Tenant 2 company info (throws FORBIDDEN)
     await expect(callerT1.byId({ id: 9999 })).rejects.toThrow();
+  });
+
+  it("8. Storefront components do not render Super Master preview banner or platform controls", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+
+    const landingPageCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/pages/LandingPage.tsx"),
+      "utf-8"
+    );
+    const bottomNavCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/components/CustomerBottomNav.tsx"),
+      "utf-8"
+    );
+    const productsPageCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/pages/Products.tsx"),
+      "utf-8"
+    );
+
+    // Banner removed completely
+    expect(landingPageCode).not.toContain("super-master-storefront-banner");
+    expect(landingPageCode).not.toContain("Return to Super Master Console");
+    expect(landingPageCode).not.toContain("return-to-super-master-btn");
+    expect(landingPageCode).not.toContain("header-super-master-link");
+    expect(landingPageCode).not.toContain("mobile-drawer-super-master-link");
+
+    // Bottom navigation has no Console entry
+    expect(bottomNavCode).not.toContain("Console");
+    expect(bottomNavCode).not.toContain("/super-master");
+
+    // Products page headers have no Super Master buttons
+    expect(productsPageCode).not.toContain("header-super-master-link");
+  });
+
+  it("9. Direct Super Master access and server-side authorization remain strictly enforced", async () => {
+    const { superMasterRouter } = await import("./superMasterRouter");
+
+    // Unauthenticated caller cannot access Super Master platform stats
+    const unauthedCaller = superMasterRouter.createCaller({
+      user: null as any,
+      session: null as any,
+      req: {} as any,
+      res: {} as any,
+    });
+    await expect(unauthedCaller.stats()).rejects.toThrow();
+
+    // Regular tenant owner/admin cannot access Super Master platform stats
+    const tenantOwnerCaller = superMasterRouter.createCaller({
+      user: {
+        id: 2,
+        email: "owner@boutique.com",
+        role: "admin",
+        companyId: 1,
+      } as any,
+      session: null as any,
+      req: {} as any,
+      res: {} as any,
+    });
+    await expect(tenantOwnerCaller.stats()).rejects.toThrow();
+
+    // Authorized Super Master caller can access platform stats directly
+    const superMasterCaller = superMasterRouter.createCaller({
+      user: {
+        id: 1,
+        email: "mdsohail88008@gmail.com",
+        role: "super_master",
+        companyId: null,
+      } as any,
+      session: null as any,
+      req: {} as any,
+      res: {} as any,
+    });
+    const stats = await superMasterCaller.stats();
+    expect(stats).toBeDefined();
+    expect(stats.totalTenants).toBeGreaterThan(0);
+  });
+
+  it("10. Exposes Website A at /store/the-fragrance-store and designates '/' for Super Master Platform Console", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+
+    const appCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/App.tsx"),
+      "utf-8"
+    );
+    const adminLoginCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/pages/AdminLogin.tsx"),
+      "utf-8"
+    );
+
+    // Root route maps to AdminLogin (Super Master Login)
+    expect(appCode).toMatch(/<Route\s+path="\/"\s+element=\{<AdminLogin\s*\/>\}/);
+    // Dedicated storefront routes exist
+    expect(appCode).toContain('path="/store/:tenantSlug"');
+    expect(appCode).toContain('path="/store"');
+
+    // AdminLogin activates Super Master Platform Console mode when loaded at root
+    expect(adminLoginCode).toContain('location.pathname === "/"');
+    expect(adminLoginCode).toContain("Super Master Platform Console");
+
+    // SuperMasterRoute redirects unauthenticated visitors to /?returnTo=
+    expect(appCode).toContain('to={`/?returnTo=${encodeURIComponent(returnTo)}`}');
+  });
+
+  it("11. Storefront navigation links route to /store/the-fragrance-store instead of '/'", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+
+    const landingPageCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/pages/LandingPage.tsx"),
+      "utf-8"
+    );
+    const bottomNavCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/components/CustomerBottomNav.tsx"),
+      "utf-8"
+    );
+    const cartCode = await fs.readFile(
+      path.resolve(process.cwd(), "src/pages/Cart.tsx"),
+      "utf-8"
+    );
+
+    // Storefront logo and Home links use tenant storefrontPath
+    expect(landingPageCode).toContain("storefrontPath");
+    expect(landingPageCode).toContain('to={storefrontPath}');
+    // Fallback pages link to /store/the-fragrance-store
+    expect(landingPageCode).toContain('to="/store/the-fragrance-store"');
+
+    // Customer bottom nav uses /store/the-fragrance-store
+    expect(bottomNavCode).toContain("/store/the-fragrance-store");
+    expect(bottomNavCode).not.toContain('to="/"');
+
+    // Cart Continue Shopping link points to /store/the-fragrance-store
+    expect(cartCode).toContain('to="/store/the-fragrance-store"');
   });
 });

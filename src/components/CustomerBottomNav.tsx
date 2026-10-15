@@ -1,18 +1,24 @@
 import { Link } from "react-router";
-import { Home, Info, LayoutGrid, ShoppingCart, Sparkles, UserRound, ShieldCheck } from "lucide-react";
+import { Home, Info, LayoutGrid, ShoppingCart, Sparkles, UserRound } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/lib/guestCart";
-import { isSuperMaster } from "@/lib/roles";
 
 interface CustomerBottomNavProps {
   active?: "home" | "shop" | "categories" | "cart" | "account" | "about" | "none";
+  storefrontPath?: string;
 }
 
-export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
+export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerBottomNavProps) {
   const { user } = useAuth();
   const guestCart = useGuestCart();
   const isAuthenticated = !!user;
+  const targetStorefront =
+    storefrontPath ||
+    (typeof window !== "undefined" && window.location.pathname.startsWith("/store")
+      ? window.location.pathname.split("#")[0]
+      : "/store/the-fragrance-store");
+
   const cartQuery = trpc.cart.list.useQuery(undefined, {
     enabled: isAuthenticated,
     retry: false,
@@ -23,7 +29,7 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
     : guestCart.items.reduce((sum, item) => sum + item.quantity, 0);
 
   function handleCategoriesClick(e: React.MouseEvent) {
-    if (window.location.pathname === "/") {
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/store")) {
       e.preventDefault();
       const el = document.getElementById("categories-section");
       if (el) {
@@ -33,15 +39,10 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
   }
 
   function handleHomeClick(e: React.MouseEvent) {
-    if (window.location.pathname === "/") {
+    if (typeof window !== "undefined" && (window.location.pathname === targetStorefront || window.location.pathname.startsWith("/store"))) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }
-
-  // Do not show the customer shopping bottom navigation to Super Master users while they are in the platform console.
-  if (isSuperMaster(user) && window.location.pathname.startsWith("/super-master")) {
-    return null;
   }
 
   return (
@@ -53,7 +54,7 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
       <div className="grid grid-cols-5 items-center max-w-md mx-auto">
         {/* 1. Home */}
         <Link
-          to="/"
+          to={targetStorefront}
           id="mobile-nav-home"
           onClick={handleHomeClick}
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
@@ -106,7 +107,7 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
 
         {/* 3. Categories */}
         <Link
-          to="/#categories-section"
+          to={`${targetStorefront}#categories-section`}
           id="mobile-nav-categories"
           onClick={handleCategoriesClick}
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
@@ -164,39 +165,29 @@ export function CustomerBottomNav({ active = "home" }: CustomerBottomNavProps) {
           </span>
         </Link>
 
-        {/* 5. Account / Super Master */}
+        {/* 5. Account */}
         <Link
-          to={isSuperMaster(user) ? "/super-master" : isAuthenticated ? "/dashboard" : "/admin/login"}
+          to={isAuthenticated ? "/dashboard" : "/admin/login"}
           id="mobile-nav-account"
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
             active === "account"
               ? "text-[#C5A059] font-semibold"
-              : isSuperMaster(user)
-              ? "text-amber-400 font-semibold"
               : "text-[#9E978C] hover:text-[#FDFBF7] font-normal"
           }`}
         >
-          {isSuperMaster(user) ? (
-            <ShieldCheck className="h-4.5 w-4.5 text-amber-400" />
-          ) : (
-            <UserRound
-              className={`h-4.5 w-4.5 transition-all ${
-                active === "account"
-                  ? "text-[#C5A059] scale-105"
-                  : "text-[#9E978C] group-hover:text-[#FDFBF7]"
-              }`}
-            />
-          )}
+          <UserRound
+            className={`h-4.5 w-4.5 transition-all ${
+              active === "account"
+                ? "text-[#C5A059] scale-105"
+                : "text-[#9E978C] group-hover:text-[#FDFBF7]"
+            }`}
+          />
           <span
             className={`text-[9.5px] mt-1 tracking-wider uppercase leading-none font-sans ${
-              active === "account"
-                ? "font-semibold text-[#C5A059]"
-                : isSuperMaster(user)
-                ? "font-semibold text-amber-400"
-                : ""
+              active === "account" ? "font-semibold text-[#C5A059]" : ""
             }`}
           >
-            {isSuperMaster(user) ? "Console" : "Account"}
+            Account
           </span>
         </Link>
       </div>

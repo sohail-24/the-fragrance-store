@@ -212,7 +212,7 @@ export default function ProductDetail() {
         <p className="mt-2 text-sm text-muted-foreground break-words">
           {error?.message ?? "This product may have been archived or is not available."}
         </p>
-        <Link to="/">
+        <Link to="/store/the-fragrance-store">
           <Button className="mt-5" variant="outline">Back to Home</Button>
         </Link>
         <CustomerBottomNav active="categories" />
@@ -266,7 +266,7 @@ export default function ProductDetail() {
   return (
     <div className="w-full max-w-6xl min-w-0 mx-auto flex flex-col gap-5 px-4 md:px-0 pb-20 md:pb-6 overflow-x-hidden">
       <section className="flex items-center justify-between md:border-b md:pb-3 w-full min-w-0">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/store/the-fragrance-store" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </Link>

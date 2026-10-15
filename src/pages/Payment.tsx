@@ -62,7 +62,7 @@ export default function Payment() {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2">
           <Link
-            to="/"
+            to="/store/the-fragrance-store"
             className="group flex flex-col items-center focus:outline-none transition-transform active:scale-95"
             title="Tex’s Chicken & Burgers"
           >
@@ -175,7 +175,7 @@ export default function Payment() {
             {/* Back to Home Page Navigation */}
             <div className="text-center pt-1 border-t border-border/40">
               <Link
-                to="/"
+                to="/store/the-fragrance-store"
                 id="back-to-home-link"
                 className="text-xs font-medium text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30"
               >

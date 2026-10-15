@@ -15,7 +15,6 @@ import {
   Gift,
   Headphones,
   Check,
-  Crown,
   Store,
   AlertTriangle,
 } from "lucide-react";
@@ -29,7 +28,6 @@ import { parseProductOptions } from "@/types";
 import { Button } from "@/components/ui/button";
 import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 import { resolveProductImageUrl } from "@/lib/image";
-import { isSuperMaster } from "@/lib/roles";
 
 export type MarketplaceProduct = {
   id: number;
@@ -360,6 +358,7 @@ export default function LandingPage() {
   const isWebsiteA = Boolean(
     tenant && (tenant.displayLabel === "Website A" || tenant.slug === "the-fragrance-store")
   );
+  const storefrontPath = tenant?.slug ? `/store/${tenant.slug}` : "/store/the-fragrance-store";
 
   const guestCart = useGuestCart();
   const { isOrderActive, activeOrders, activeCount } = usePlacedOrder();
@@ -515,17 +514,10 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
         <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
             <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
             <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
           </Link>
-          {isAuthenticated && isSuperMaster(user) && (
-            <Link to="/super-master">
-              <Button variant="outline" size="sm" className="text-xs border-[#C5A059]/40 text-[#C5A059]">
-                Platform Console
-              </Button>
-            </Link>
-          )}
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
@@ -537,18 +529,11 @@ export default function LandingPage() {
               The boutique storefront you are looking for does not exist or has been relocated.
             </p>
             <div className="pt-2 flex flex-col gap-2">
-              <Link to="/">
+              <Link to="/store/the-fragrance-store">
                 <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
                   Return to Main Storefront
                 </Button>
               </Link>
-              {isAuthenticated && isSuperMaster(user) && (
-                <Link to="/super-master">
-                  <Button variant="outline" className="w-full border-neutral-700 text-neutral-300 text-xs">
-                    Return to Super Master Console
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>
@@ -562,17 +547,10 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
         <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
             <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
             <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
           </Link>
-          {isAuthenticated && isSuperMaster(user) && (
-            <Link to="/super-master">
-              <Button variant="outline" size="sm" className="text-xs border-[#C5A059]/40 text-[#C5A059]">
-                Platform Console
-              </Button>
-            </Link>
-          )}
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
@@ -589,18 +567,11 @@ export default function LandingPage() {
               This boutique storefront is currently suspended or undergoing curation. No catalog items are publicly available at this time.
             </p>
             <div className="pt-2 flex flex-col gap-2">
-              <Link to="/">
+              <Link to="/store/the-fragrance-store">
                 <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
                   Return to Main Storefront
                 </Button>
               </Link>
-              {isAuthenticated && isSuperMaster(user) && (
-                <Link to="/super-master">
-                  <Button variant="outline" className="w-full border-neutral-700 text-neutral-300 text-xs">
-                    Return to Super Master Console
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>
@@ -610,30 +581,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col font-sans selection:bg-[#C5A059] selection:text-[#111111] pb-24 sm:pb-20">
-      
-      {/* Super Master Session Banner (Preserves session and provides clear navigation back to console) */}
-      {isAuthenticated && isSuperMaster(user) && tenant && (
-        <div
-          id="super-master-storefront-banner"
-          className="bg-[#1C160C] border-b border-[#C5A059]/40 px-3 sm:px-6 py-2 text-xs flex flex-wrap items-center justify-between gap-2 text-amber-300 z-50 sticky top-0"
-        >
-          <div className="flex items-center gap-2">
-            <Crown className="w-4 h-4 text-[#C5A059] shrink-0" />
-            <span>
-              <strong>Super Master Preview:</strong> Viewing storefront for <strong>{tenant.displayLabel}</strong> ({tenant.name})
-            </span>
-          </div>
-          <Link to="/super-master" id="return-to-super-master-btn">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-6 px-2.5 text-[11px] border-[#C5A059]/50 text-[#C5A059] hover:bg-[#C5A059]/20 font-medium cursor-pointer"
-            >
-              Return to Super Master Console
-            </Button>
-          </Link>
-        </div>
-      )}
 
       {/* ====================================================================== */}
       {/* 1. MOBILE HEADER — SINGLE ROW (MATCHING WIREFRAME)                     */}
@@ -656,7 +603,7 @@ export default function LandingPage() {
 
             {/* 2. Store Logo + Wordmark */}
             <Link
-              to={isWebsiteA ? "/" : `/store/${tenant?.slug || ""}`}
+              to={storefrontPath}
               className="flex items-center gap-2 group"
               aria-label={tenant?.name || "The Fragrance Store - House of Brands"}
             >
@@ -684,9 +631,9 @@ export default function LandingPage() {
             className="hidden md:flex items-center gap-3.5 lg:gap-6 mx-3 text-xs font-sans tracking-wider uppercase"
           >
             <Link
-              to="/"
+              to={storefrontPath}
               onClick={(e) => {
-                if (window.location.pathname === "/") {
+                if (window.location.pathname === storefrontPath) {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
@@ -726,11 +673,11 @@ export default function LandingPage() {
               )}
             </Link>
             <Link
-              to={isSuperMaster(user) ? "/super-master" : isAuthenticated ? "/dashboard" : "/admin/login"}
+              to={isAuthenticated ? "/dashboard" : "/admin/login"}
               className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1 flex items-center gap-1"
             >
               <UserRound className="h-3.5 w-3.5 text-[#C5A059]" />
-              <span>{isSuperMaster(user) ? "Console" : isAuthenticated ? (user?.name?.split(" ")[0] ?? "Account") : "Account"}</span>
+              <span>{isAuthenticated ? (user?.name?.split(" ")[0] ?? "Account") : "Account"}</span>
             </Link>
           </nav>
 
@@ -749,24 +696,10 @@ export default function LandingPage() {
               </Link>
             )}
 
-            {/* Super Master Console Navigation Entry for authorized Super Master (accessible on mobile & desktop) */}
-            {isSuperMaster(user) ? (
-              <Link
-                to="/super-master"
-                id="header-super-master-link"
-                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold tracking-wide transition-colors mr-1 shadow-xs"
-                title="Super Master Console"
-              >
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
-                <span className="hidden xs:inline">Super Master Console</span>
-                <span className="xs:hidden">Console</span>
-              </Link>
-            ) : null}
-
             {/* Desktop Account Link */}
             {isAuthenticated ? (
               <Link
-                to={isSuperMaster(user) ? "/super-master" : "/dashboard"}
+                to="/dashboard"
                 className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
               >
                 <UserRound className="h-4 w-4 text-[#C5A059]" />
@@ -948,6 +881,13 @@ export default function LandingPage() {
                 </div>
                 <div className="flex flex-col space-y-2 pl-2 text-sm text-[#C4BEB3]">
                   <Link
+                    to={storefrontPath}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="hover:text-[#FDFBF7] py-1"
+                  >
+                    Home Storefront
+                  </Link>
+                  <Link
                     to="/products"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="hover:text-[#FDFBF7] py-1"
@@ -975,17 +915,6 @@ export default function LandingPage() {
                   >
                     {isAuthenticated ? "My Dashboard" : "Account / Sign In"}
                   </Link>
-                  {isSuperMaster(user) ? (
-                    <Link
-                      to="/super-master"
-                      id="mobile-drawer-super-master-link"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="py-1 text-amber-400 font-semibold flex items-center gap-1.5"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-amber-400" />
-                      <span>Super Master Console</span>
-                    </Link>
-                  ) : null}
                 </div>
               </nav>
             </div>
@@ -1568,24 +1497,15 @@ export default function LandingPage() {
                 Navigation
               </span>
               <ul className="space-y-1.5 text-xs text-[#A8A196]">
-                <li><Link to="/" className="hover:text-[#FDFBF7]">Home</Link></li>
+                <li><Link to={storefrontPath} className="hover:text-[#FDFBF7]">Home</Link></li>
                 <li><Link to="/products" className="hover:text-[#FDFBF7]">Shop All</Link></li>
                 <li><Link to="/cart" className="hover:text-[#FDFBF7]">Cart ({cartCount})</Link></li>
                 <li><Link to="/about" className="hover:text-[#FDFBF7]">About Store</Link></li>
-                {isSuperMaster(user) ? (
-                  <li>
-                    <Link to="/super-master" className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" />
-                      Super Master Console
-                    </Link>
-                  </li>
-                ) : (
-                  <li>
-                    <Link to="/admin/login" className="hover:text-[#FDFBF7]">
-                      Staff / Admin Sign In
-                    </Link>
-                  </li>
-                )}
+                <li>
+                  <Link to="/admin/login" className="hover:text-[#FDFBF7]">
+                    Staff / Admin Sign In
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -1616,7 +1536,7 @@ export default function LandingPage() {
       {/* ====================================================================== */}
       {/* 8. FIXED MOBILE BOTTOM NAVIGATION                                      */}
       {/* ====================================================================== */}
-      <CustomerBottomNav active="home" />
+      <CustomerBottomNav active="home" storefrontPath={storefrontPath} />
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function About() {
       <header className="sticky top-0 z-40 bg-[#111111]/95 backdrop-blur-md border-b border-[#262421] text-[#FDFBF7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
           <Link
-            to="/"
+            to="/store/the-fragrance-store"
             className="flex items-center gap-3 group shrink-0 whitespace-nowrap"
             aria-label="The Fragrance Store - House of Brands"
           >
@@ -45,7 +45,7 @@ export default function About() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[13px] tracking-wider uppercase font-medium text-[#C4BEB3]">
-            <Link to="/" className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
+            <Link to="/store/the-fragrance-store" className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
               Home
             </Link>
             <Link to="/products" className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
@@ -279,7 +279,7 @@ export default function About() {
               Explore our portfolio of fragrances, or browse our proposed collections to experience the artistry of fine scent.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
-              <Link to="/">
+              <Link to="/store/the-fragrance-store">
                 <Button
                   className="h-12 px-8 bg-[#C5A059] hover:bg-[#D9BC7D] text-[#111111] text-xs font-semibold tracking-widest uppercase rounded-none"
                 >

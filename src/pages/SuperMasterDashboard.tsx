@@ -285,7 +285,7 @@ export default function SuperMasterDashboard() {
                 Store Dashboard
               </Button>
             </Link>
-            <Link to="/">
+            <Link to="/store/the-fragrance-store">
               <Button className="bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold">
                 Storefront
               </Button>

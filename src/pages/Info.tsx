@@ -179,7 +179,7 @@ export default function Info() {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2">
           <Link
-            to="/"
+            to="/store/the-fragrance-store"
             className="group flex flex-col items-center focus:outline-none transition-transform active:scale-95"
             title="Tex’s Chicken & Burgers"
           >

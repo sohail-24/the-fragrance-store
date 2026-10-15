@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Crown, Lock, Mail, ShieldCheck } from "lucide-react";
 import { setStoredAdminToken, trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,9 +12,16 @@ import { SUPER_MASTER_EMAIL, isSuperMaster } from "@/lib/roles";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo");
-  const isSuperMasterIntent = Boolean(returnTo?.includes("super-master"));
+  const modeParam = searchParams.get("mode");
+  const isSuperMasterIntent = Boolean(
+    location.pathname === "/" ||
+    location.pathname.startsWith("/super-master") ||
+    returnTo?.includes("super-master") ||
+    modeParam === "super_master"
+  );
   const [loginMode, setLoginMode] = useState<"super_master" | "admin">(
     isSuperMasterIntent ? "super_master" : "admin"
   );
@@ -26,6 +33,15 @@ export default function AdminLogin() {
   const utils = trpc.useUtils();
   const login = trpc.auth.loginAdmin.useMutation();
   const { user, isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    setLoginMode(isSuperMasterIntent ? "super_master" : "admin");
+    if (isSuperMasterIntent && SUPER_MASTER_EMAIL) {
+      setEmail((prev) => (prev ? prev : SUPER_MASTER_EMAIL));
+    } else if (!isSuperMasterIntent) {
+      setEmail((prev) => (prev === SUPER_MASTER_EMAIL ? "" : prev));
+    }
+  }, [isSuperMasterIntent]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
@@ -74,11 +90,11 @@ export default function AdminLogin() {
       <div className="w-full max-w-md space-y-3">
         <Link
           id="back-to-home-link"
-          to="/"
+          to="/store/the-fragrance-store"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 transition-colors hover:text-amber-400"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
+          <span>{isSuperMasterActive ? "Visit Storefront" : "Back to Storefront"}</span>
         </Link>
         <Card className="w-full bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
           <CardHeader className="space-y-4 text-center">
@@ -95,40 +111,13 @@ export default function AdminLogin() {
                   : "Sign in with administrator credentials to manage boutique catalog, inventory, and operations."}
               </p>
             </div>
-            {/* Login Mode Selector (Context toggle without credential prefill) */}
-            <div className="inline-flex rounded-lg border border-neutral-800 bg-neutral-950 p-1 text-xs mx-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginMode("super_master");
-                  if (!email && SUPER_MASTER_EMAIL) {
-                    setEmail(SUPER_MASTER_EMAIL);
-                  }
-                  setError(null);
-                }}
-                className={`px-3 py-1 rounded transition font-medium ${
-                  isSuperMasterActive
-                    ? "bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                👑 Super Master
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginMode("admin");
-                  setError(null);
-                }}
-                className={`px-3 py-1 rounded transition font-medium ${
-                  !isSuperMasterActive
-                    ? "bg-neutral-800 text-neutral-200 font-semibold"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                🛡️ Store Admin
-              </button>
-            </div>
+            {/* Show badge only when accessing Super Master platform login explicitly; hide from tenant storefront visitors */}
+            {isSuperMasterIntent && (
+              <div className="inline-flex rounded-lg border border-amber-500/30 bg-neutral-950 px-3 py-1 text-xs mx-auto text-amber-300 font-semibold items-center gap-1.5">
+                <Crown className="w-3.5 h-3.5" />
+                <span>Super Master Authentication</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={submit}>
