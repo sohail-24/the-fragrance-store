@@ -35,9 +35,9 @@ import { BUSINESS_OWNER_EMAIL } from "@contracts/roles";
 import { findUserByEmail } from "./queries/users";
 import { notifyAdminNewOrder } from "./services/orderNotification";
 
-function canAccessOrderDetails(input: {
-  user: { role: string; email?: string | null; companyId?: number | null };
-  order: { buyerId: number; supplierId: number };
+export function canAccessOrderDetails(input: {
+  user: { id?: number; role: string; email?: string | null; companyId?: number | null };
+  order: { buyerId: number; supplierId: number; placedByUserId?: number };
 }) {
   // Platform Super Master has cross-tenant oversight
   if (isSuperMaster(input.user, env.superMasterEmail)) {
@@ -46,9 +46,10 @@ function canAccessOrderDetails(input: {
 
   // Tenant-isolated: buyer or supplier can view their own tenant order
   return (
-    !!input.user.companyId &&
-    (input.order.buyerId === input.user.companyId ||
-      input.order.supplierId === input.user.companyId)
+    input.order.placedByUserId === input.user.id ||
+    (!!input.user.companyId &&
+      (input.order.buyerId === input.user.companyId ||
+        input.order.supplierId === input.user.companyId))
   );
 }
 
@@ -278,7 +279,7 @@ export const orderRouter = createRouter({
       };
     }),
 
-  detail: publicQuery
+  detail: authedQuery
     .input(z.object({ orderId: z.number() }))
     .query(async ({ ctx, input }) => {
       const order = await findOrderWithDetails(input.orderId);
@@ -289,7 +290,7 @@ export const orderRouter = createRouter({
         });
       }
 
-      if (ctx.user && !canAccessOrderDetails({ user: ctx.user, order })) {
+      if (!canAccessOrderDetails({ user: ctx.user, order })) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to view this order.",

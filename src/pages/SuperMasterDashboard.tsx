@@ -151,6 +151,7 @@ export default function SuperMasterDashboard() {
           await assignOwnerMutation.mutateAsync({
             tenantId: created.id,
             userId: Number(formData.assignedOwnerId),
+            role: "owner",
           });
         } catch {
           // non-fatal
@@ -1508,7 +1509,7 @@ export default function SuperMasterDashboard() {
                 ))}
               </select>
               <p className="text-[10px] text-neutral-500">
-                Connects an existing registered administrator account as the primary tenant manager.
+                Lists active accounts with a valid password credential that can be assigned as the primary tenant manager.
               </p>
             </div>
 
@@ -1744,7 +1745,7 @@ export default function SuperMasterDashboard() {
             <div className="p-3 rounded bg-neutral-950 border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
               <span className="font-semibold text-neutral-200 block">Security Policy:</span>
               <p>
-                Assigning an owner links the tenant membership in PostgreSQL and sets the default company context. The user will be authorized to manage products, inventory, and orders for this website.
+                Assigning an owner creates an explicit tenant membership. It does not replace the user's other tenant memberships or default company context.
               </p>
             </div>
 
@@ -1764,6 +1765,7 @@ export default function SuperMasterDashboard() {
                     assignOwnerMutation.mutate({
                       tenantId: assigningTenant.id,
                       userId: selectedOwnerId,
+                      role: "owner",
                     });
                   }
                 }}

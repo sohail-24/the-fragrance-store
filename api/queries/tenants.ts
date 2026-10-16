@@ -1,8 +1,8 @@
 import { getDb } from "./connection";
-import { companies, products, orders, users, tenantMemberships, type Company } from "@db/schema";
+import { companies, products, orders, users, tenantMemberships, type Company, type TenantMembership } from "@db/schema";
 import { eq, sql, desc, and } from "drizzle-orm";
 import { ensureDefaultBusiness } from "./companies";
-import { upsertTenantMembership } from "./memberships";
+import { isSupportedPasswordHash } from "../auth/password";
 
 export type TenantOwner = {
   id: number;
@@ -214,16 +214,61 @@ export async function getPlatformSaaSStats(): Promise<PlatformSaaSStats> {
   }
 }
 
-export async function assignTenantOwner(companyId: number, userId: number): Promise<boolean> {
+export type TenantMembershipAssignmentRole = TenantMembership["role"];
+
+export type TenantMembershipAssignmentResult =
+  | { status: "assigned"; membership: TenantMembership }
+  | { status: "unchanged"; membership: TenantMembership }
+  | { status: "tenant_not_found" }
+  | { status: "tenant_inactive" }
+  | { status: "user_ineligible" }
+  | { status: "membership_conflict"; membership: TenantMembership };
+
+export async function assignTenantMembership(input: {
+  companyId: number;
+  userId: number;
+  role: TenantMembershipAssignmentRole;
+}): Promise<TenantMembershipAssignmentResult> {
   const db = getDb();
-  await upsertTenantMembership({
-    userId,
-    companyId,
-    role: "owner",
-    isActive: true,
+  return db.transaction(async (tx: any) => {
+    const tenant = await tx.query.companies.findFirst({
+      where: eq(companies.id, input.companyId),
+    });
+    if (!tenant) return { status: "tenant_not_found" };
+    if (!tenant.isActive) return { status: "tenant_inactive" };
+
+    const user = await tx.query.users.findFirst({
+      where: eq(users.id, input.userId),
+    });
+    if (!user || !user.isActive || !user.email || !isSupportedPasswordHash(user.passwordHash)) {
+      return { status: "user_ineligible" };
+    }
+
+    const existing = await tx.query.tenantMemberships.findFirst({
+      where: and(
+        eq(tenantMemberships.userId, input.userId),
+        eq(tenantMemberships.companyId, input.companyId),
+      ),
+    });
+    if (existing) {
+      if (existing.isActive && existing.role === input.role) {
+        return { status: "unchanged", membership: existing };
+      }
+      return { status: "membership_conflict", membership: existing };
+    }
+
+    const [membership] = await tx
+      .insert(tenantMemberships)
+      .values({
+        userId: input.userId,
+        companyId: input.companyId,
+        role: input.role,
+        isActive: true,
+      })
+      .returning();
+
+    return { status: "assigned", membership };
   });
-  await db.update(users).set({ companyId }).where(eq(users.id, userId));
-  return true;
 }
 
 export async function listTenants(filter?: {

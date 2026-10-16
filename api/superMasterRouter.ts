@@ -8,12 +8,15 @@ import {
   createTenant,
   updateTenant,
   setTenantStatus,
-  assignTenantOwner,
+  assignTenantMembership,
 } from "./queries/tenants";
 import { getDb } from "./queries/connection";
 import { users } from "@db/schema";
 import { asc, eq, sql } from "drizzle-orm";
 import { env } from "./lib/env";
+import { isSupportedPasswordHash } from "./auth/password";
+
+const tenantMembershipRoleSchema = z.enum(["owner", "admin", "staff"]);
 
 const tenantCreateSchema = z.object({
   name: z.string().min(2, "Brand/Tenant name must be at least 2 characters"),
@@ -146,17 +149,19 @@ export const superMasterRouter = createRouter({
     const allUsers = await db.query.users.findMany({
       orderBy: [asc(users.id)],
     });
-    return allUsers.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      phone: u.phone,
-      role: u.role,
-      companyId: u.companyId,
-      isActive: u.isActive,
-      createdAt: u.createdAt,
-      lastSignInAt: u.lastSignInAt,
-    }));
+    return allUsers
+      .filter((u) => u.isActive && !!u.email && isSupportedPasswordHash(u.passwordHash))
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        companyId: u.companyId,
+        isActive: u.isActive,
+        createdAt: u.createdAt,
+        lastSignInAt: u.lastSignInAt,
+      }));
   }),
 
   // Level 1: Assign or reassign an owner to a tenant website
@@ -165,18 +170,48 @@ export const superMasterRouter = createRouter({
       z.object({
         tenantId: z.number(),
         userId: z.number(),
+        role: tenantMembershipRoleSchema,
       })
     )
     .mutation(async ({ input }) => {
-      const tenant = await getTenantById(input.tenantId);
-      if (!tenant) {
+      const result = await assignTenantMembership({
+        companyId: input.tenantId,
+        userId: input.userId,
+        role: input.role,
+      });
+
+      if (result.status === "tenant_not_found") {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Website / Shop not found.",
         });
       }
-      const success = await assignTenantOwner(input.tenantId, input.userId);
-      return { success, tenantId: input.tenantId, userId: input.userId };
+      if (result.status === "tenant_inactive") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot assign a membership to an inactive tenant.",
+        });
+      }
+      if (result.status === "user_ineligible") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The selected user must be active and have a valid password credential.",
+        });
+      }
+      if (result.status === "membership_conflict") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "The selected user already has a membership requiring an explicit role or activation decision.",
+        });
+      }
+
+      return {
+        success: true,
+        changed: result.status === "assigned",
+        tenantId: input.tenantId,
+        userId: input.userId,
+        role: input.role,
+      };
     }),
 
   // Level 1: Real System Health & Database Monitoring

@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { isOwner } from "@contracts/roles";
+import { isSuperMaster } from "@contracts/roles";
 import { authedQuery, createRouter, ownerQuery, publicQuery } from "./middleware";
+import { env } from "./lib/env";
+import { findMembership } from "./queries/memberships";
 import {
   ensureDefaultBusiness,
   findAllCompanies,
@@ -12,15 +14,27 @@ import {
   resolvePublicStorefront,
 } from "./queries/companies";
 
-function canAccessCompany(input: {
-  user: { role?: string | null; email?: string | null; companyId?: number | null };
+export function canAccessCompany(input: {
+  user: { id?: number; role?: string | null; email?: string | null; companyId?: number | null };
   companyId: number;
+  hasActiveMembership?: boolean;
 }) {
   return (
-    input.user.role === "admin" ||
-    isOwner(input.user) ||
-    input.user.companyId === input.companyId
+    isSuperMaster(input.user, env.superMasterEmail) ||
+    input.user.companyId === input.companyId ||
+    input.hasActiveMembership === true
   );
+}
+
+async function hasCompanyAccess(
+  user: { id?: number; role?: string | null; email?: string | null; companyId?: number | null },
+  companyId: number,
+) {
+  if (canAccessCompany({ user, companyId })) return true;
+  if (!user.id) return false;
+
+  const membership = await findMembership(user.id, companyId);
+  return canAccessCompany({ user, companyId, hasActiveMembership: !!membership });
 }
 
 export const companyRouter = createRouter({
@@ -66,7 +80,7 @@ export const companyRouter = createRouter({
           message: "Company not found.",
         });
       }
-      if (!canAccessCompany({ user: ctx.user, companyId: company.id })) {
+      if (!(await hasCompanyAccess(ctx.user, company.id))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to view this company.",
@@ -85,7 +99,7 @@ export const companyRouter = createRouter({
           message: "Company not found.",
         });
       }
-      if (!canAccessCompany({ user: ctx.user, companyId: company.id })) {
+      if (!(await hasCompanyAccess(ctx.user, company.id))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to view this company.",
