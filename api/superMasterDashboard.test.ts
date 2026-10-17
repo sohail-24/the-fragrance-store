@@ -94,8 +94,16 @@ describe("Super Master Dashboard & Authorization Verification", () => {
       // Unknown email
       expect(validateAdminCredentials("unknown@example.com", "admin123")).toBe(false);
     } finally {
-      process.env.SUPER_MASTER_EMAIL = origSmEmail;
-      process.env.SUPER_MASTER_PASSWORD = origSmPass;
+      if (origSmEmail === undefined) {
+        delete process.env.SUPER_MASTER_EMAIL;
+      } else {
+        process.env.SUPER_MASTER_EMAIL = origSmEmail;
+      }
+      if (origSmPass === undefined) {
+        delete process.env.SUPER_MASTER_PASSWORD;
+      } else {
+        process.env.SUPER_MASTER_PASSWORD = origSmPass;
+      }
     }
   });
 

@@ -1,11 +1,18 @@
+import * as cookie from "cookie";
+import { SignJWT, jwtVerify } from "jose";
 import { eq } from "drizzle-orm";
 import { companies, type Company, type TenantMembership, type User } from "@db/schema";
 import { verifySecret } from "./password";
 import { getDb, mockDbInstance } from "../queries/connection";
 import { findMembership } from "../queries/memberships";
 import { findUserByEmail } from "../queries/users";
+import { env } from "../lib/env";
+import { getSessionCookieOptions } from "../lib/cookies";
 
 const tenantMembershipRoles = ["owner", "admin", "staff"] as const;
+
+export const tenantAdminAccessCookieName = "tenant_admin_access";
+export const tenantAdminAccessMaxAgeMs = 15 * 60 * 1000;
 
 export type TenantAdminMembershipRole = (typeof tenantMembershipRoles)[number];
 
@@ -135,12 +142,113 @@ export async function authenticateTenantAdminWithDependencies(
 
 /**
  * Read-only, fail-closed tenant administrator authentication.
- * This intentionally is not connected to the legacy login or session flow yet.
  */
 export function authenticateTenantAdmin(
   email: string,
   password: string,
   tenantSlug: string,
+  dependencies: TenantAdminAuthenticationDependencies = productionDependencies,
 ): Promise<TenantAdminPrincipal> {
-  return authenticateTenantAdminWithDependencies(email, password, tenantSlug, productionDependencies);
+  return authenticateTenantAdminWithDependencies(email, password, tenantSlug, dependencies);
+}
+
+const encoder = new TextEncoder();
+
+export async function signTenantAdminToken(
+  principal: TenantAdminPrincipal,
+  maxAgeMs = tenantAdminAccessMaxAgeMs,
+): Promise<string> {
+  const secret = process.env.JWT_ACCESS_SECRET || env.jwtAccessSecret;
+  if (!secret) {
+    throw new Error("JWT_ACCESS_SECRET is not configured.");
+  }
+
+  return new SignJWT({
+    typ: "tenant_admin_access",
+    userId: principal.userId,
+    companyId: principal.companyId,
+    tenantSlug: principal.tenantSlug,
+    membershipRole: principal.membershipRole,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuer("the-fragrance-store:tenant-admin")
+    .setSubject(String(principal.userId))
+    .setIssuedAt()
+    .setExpirationTime(Math.floor((Date.now() + maxAgeMs) / 1000))
+    .sign(encoder.encode(secret));
+}
+
+export async function verifyTenantAdminToken(
+  token: string,
+): Promise<TenantAdminPrincipal> {
+  const secret = process.env.JWT_ACCESS_SECRET || env.jwtAccessSecret;
+  if (!secret) {
+    throw new Error("JWT_ACCESS_SECRET is not configured.");
+  }
+
+  const result = await jwtVerify(token, encoder.encode(secret), {
+    issuer: "the-fragrance-store:tenant-admin",
+  });
+
+  if (result.payload.typ !== "tenant_admin_access") {
+    throw new Error("Invalid tenant admin token type.");
+  }
+
+  const userId = Number(result.payload.userId ?? result.payload.sub);
+  const companyId = Number(result.payload.companyId);
+  const tenantSlug = String(result.payload.tenantSlug ?? "");
+  const membershipRole = String(result.payload.membershipRole ?? "");
+
+  if (
+    !userId ||
+    !companyId ||
+    !tenantSlug ||
+    !isTenantMembershipRole(membershipRole)
+  ) {
+    throw new Error("Invalid tenant admin token payload.");
+  }
+
+  return {
+    userId,
+    companyId,
+    tenantSlug,
+    membershipRole,
+  };
+}
+
+export function issueTenantAdminSessionCookie(
+  token: string,
+  requestHeaders: Headers,
+  responseHeaders: Headers,
+) {
+  const options = getSessionCookieOptions(requestHeaders);
+  responseHeaders.append(
+    "set-cookie",
+    cookie.serialize(tenantAdminAccessCookieName, token, {
+      httpOnly: true,
+      path: "/",
+      sameSite: options.sameSite?.toLowerCase() as "lax" | "none",
+      secure: options.secure,
+      partitioned: options.partitioned,
+      maxAge: Math.floor(tenantAdminAccessMaxAgeMs / 1000),
+    }),
+  );
+}
+
+export function clearTenantAdminSessionCookie(
+  requestHeaders: Headers,
+  responseHeaders: Headers,
+) {
+  const options = getSessionCookieOptions(requestHeaders);
+  responseHeaders.append(
+    "set-cookie",
+    cookie.serialize(tenantAdminAccessCookieName, "", {
+      httpOnly: true,
+      path: "/",
+      sameSite: options.sameSite?.toLowerCase() as "lax" | "none",
+      secure: options.secure,
+      partitioned: options.partitioned,
+      maxAge: 0,
+    }),
+  );
 }

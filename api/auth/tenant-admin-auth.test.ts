@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import {
   authenticateTenantAdminWithDependencies,
   type TenantAdminAuthenticationDependencies,
+  signTenantAdminToken,
+  verifyTenantAdminToken,
+  issueTenantAdminSessionCookie,
+  clearTenantAdminSessionCookie,
+  tenantAdminAccessCookieName,
 } from "./tenant-admin-auth";
+import { authRouter } from "../auth-router";
 
 const tenantA = { id: 1, slug: "tenant-a", isActive: true };
 const tenantB = { id: 2, slug: "tenant-b", isActive: true };
@@ -143,5 +149,63 @@ describe("tenant administrator authentication", () => {
         "verifySecret",
       ]);
     }
+  });
+
+  describe("tenant admin token and cookie issuance", () => {
+    it("signs and verifies a tenant admin token with bound tenant identity", async () => {
+      const principal = {
+        userId: 42,
+        companyId: 10,
+        tenantSlug: "niche-parfums",
+        membershipRole: "admin" as const,
+      };
+
+      const token = await signTenantAdminToken(principal);
+      expect(typeof token).toBe("string");
+      expect(token.length).toBeGreaterThan(20);
+
+      const verified = await verifyTenantAdminToken(token);
+      expect(verified).toEqual(principal);
+    });
+
+    it("issues and clears the isolated tenant_admin_access cookie", () => {
+      const reqHeaders = new Headers();
+      const resHeaders = new Headers();
+
+      issueTenantAdminSessionCookie("sample-tenant-token", reqHeaders, resHeaders);
+      const setCookie = resHeaders.get("set-cookie");
+      expect(setCookie).toContain(tenantAdminAccessCookieName);
+      expect(setCookie).toContain("sample-tenant-token");
+      expect(setCookie).not.toContain("shop_admin_access");
+
+      const clearHeaders = new Headers();
+      clearTenantAdminSessionCookie(reqHeaders, clearHeaders);
+      const cleared = clearHeaders.get("set-cookie");
+      expect(cleared).toContain(tenantAdminAccessCookieName);
+      expect(cleared).toContain("Max-Age=0");
+    });
+  });
+
+  describe("authRouter.loginTenantAdmin procedure registration", () => {
+    it("registers loginTenantAdmin on authRouter", () => {
+      const procedures = (authRouter as any)._def.procedures;
+      expect(procedures.loginTenantAdmin).toBeDefined();
+      expect(procedures.loginAdmin).toBeDefined();
+    });
+
+    it("fails closed on invalid credentials or unavailable database", async () => {
+      const caller = authRouter.createCaller({
+        req: new Request("http://localhost/api/trpc"),
+        resHeaders: new Headers(),
+      });
+
+      await expect(
+        caller.loginTenantAdmin({
+          email: "unknown@example.com",
+          password: "wrong",
+          tenantSlug: "non-existent-tenant",
+        }),
+      ).rejects.toThrow();
+    });
   });
 });

@@ -38,7 +38,12 @@ export function isPlatformAdmin(user?: UserLike | null) {
 
 export function isSuperMaster(user?: UserLike | null, configuredSuperMasterEmail?: string | null) {
   if (!user) return false;
-  const envEmail = typeof process !== "undefined" && process?.env?.SUPER_MASTER_EMAIL ? process.env.SUPER_MASTER_EMAIL : null;
+  const envEmail =
+    typeof process !== "undefined" &&
+    process?.env?.SUPER_MASTER_EMAIL &&
+    process.env.SUPER_MASTER_EMAIL !== "undefined"
+      ? process.env.SUPER_MASTER_EMAIL
+      : null;
   const targetEmail = normalizeEmail(configuredSuperMasterEmail || envEmail || SUPER_MASTER_EMAIL);
   const userEmail = normalizeEmail(user.email);
 

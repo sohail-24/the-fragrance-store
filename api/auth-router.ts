@@ -38,6 +38,13 @@ import {
   validateOrdinaryAdminCredentials,
   validateSuperMasterCredentials,
 } from "./auth/admin-session";
+import {
+  authenticateTenantAdmin,
+  TenantAdminAuthenticationError,
+  signTenantAdminToken,
+  issueTenantAdminSessionCookie,
+  clearTenantAdminSessionCookie,
+} from "./auth/tenant-admin-auth";
 
 const mobileNumberSchema = z
   .string()
@@ -291,10 +298,62 @@ export const authRouter = createRouter({
       return { user: publicUser(user), token };
     }),
 
+  loginTenantAdmin: publicQuery
+    .input(
+      z.object({
+        email: z.string().trim().email(),
+        password: z.string().min(1),
+        tenantSlug: z.string().trim().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const principal = await authenticateTenantAdmin(
+          input.email,
+          input.password,
+          input.tenantSlug,
+        );
+
+        const token = await signTenantAdminToken(principal);
+        issueTenantAdminSessionCookie(token, ctx.req.headers, ctx.resHeaders);
+
+        const user = await findUserById(principal.userId);
+        if (!user || !user.isActive) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Invalid tenant administrator credentials.",
+          });
+        }
+
+        await updateLastSignIn(principal.userId);
+
+        return {
+          user: publicUser(user),
+          principal,
+          token,
+        };
+      } catch (error) {
+        if (error instanceof TenantAdminAuthenticationError) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: error.message,
+          });
+        }
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid tenant administrator credentials.",
+        });
+      }
+    }),
+
   refresh: publicQuery.mutation(async ({ ctx }) => ({ user: publicUser(await authenticateAdminRequest(ctx.req.headers, ctx.resHeaders)) })),
 
   logout: publicQuery.mutation(async ({ ctx }) => {
     clearAdminSessionCookies(ctx.req.headers, ctx.resHeaders);
+    clearTenantAdminSessionCookie(ctx.req.headers, ctx.resHeaders);
     return { success: true };
   }),
 });
