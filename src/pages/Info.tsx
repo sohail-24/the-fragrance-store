@@ -1,6 +1,6 @@
 import { useState, useMemo, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
-import { ArrowLeft, ArrowRight, CheckCircle2, Lock, ShoppingBag } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { ArrowLeft, ArrowRight, CheckCircle2, Lock, ShoppingBag, Store } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/lib/guestCart";
 import { trpc } from "@/providers/trpc";
@@ -15,13 +15,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 
 export default function Info() {
+  const params = useParams<{ tenantSlug?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const guestCart = useGuestCart();
   const isAuthenticated = !!user;
   const utils = trpc.useUtils();
+
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: params.tenantSlug },
+    { enabled: !!params.tenantSlug, retry: false }
+  );
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const storefrontPath = params.tenantSlug ? `/store/${params.tenantSlug}` : "/store/the-fragrance-store";
 
   // Retrieve current cart contents to preserve order context
   const cartQuery = trpc.cart.list.useQuery(undefined, {
@@ -163,7 +172,7 @@ export default function Info() {
       }
 
       // Continue seamlessly to existing next checkout step
-      navigate("/payment");
+      navigate(`${storefrontPath}/payment`);
     } catch (err) {
       setServerError(
         err instanceof Error
@@ -173,28 +182,48 @@ export default function Info() {
     }
   };
 
+  if (params.tenantSlug && storefrontQuery.data?.status === "not_found") {
+    return (
+      <div className="min-h-[85vh] flex flex-col justify-center items-center px-4 py-8">
+        <div className="max-w-md w-full bg-card border border-border p-8 rounded-xl text-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center justify-center mx-auto">
+            <Store className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-serif font-bold text-foreground">Boutique Not Found</h2>
+          <p className="text-sm text-muted-foreground">
+            The checkout session cannot proceed because the requested boutique does not exist.
+          </p>
+          <Link to="/store/the-fragrance-store">
+            <Button variant="outline">Return to Main Storefront</Button>
+          </Link>
+        </div>
+        <CustomerBottomNav active="cart" storefrontPath="/store/the-fragrance-store" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[85vh] flex flex-col justify-center items-center px-4 py-8 sm:py-12 bg-muted/20">
       <div className="w-full max-w-md mx-auto space-y-6">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2">
           <Link
-            to="/store/the-fragrance-store"
+            to={storefrontPath}
             className="group flex flex-col items-center focus:outline-none transition-transform active:scale-95"
-            title="Tex’s Chicken & Burgers"
+            title={tenant?.name || "The Fragrance Store"}
           >
-            <div className="h-16 w-16 rounded-2xl bg-white shadow-md border border-border/50 p-2 flex items-center justify-center transition-all group-hover:shadow-lg">
+            <div className="h-16 w-16 rounded-2xl bg-[#111111] border border-[#C5A059]/40 p-2 flex items-center justify-center transition-all group-hover:border-[#C5A059] shadow-sm">
               <img
-                src="/branding/logo.png"
-                alt="Tex’s Chicken & Burgers"
+                src={tenant?.logo || "/fragrance/brand-mark.svg"}
+                alt={tenant?.name || "The Fragrance Store"}
                 className="h-full w-full object-contain"
               />
             </div>
-            <span className="mt-3 text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
-              Tex’s Chicken & Burgers
+            <span className="mt-3 text-base sm:text-lg font-serif font-bold tracking-[0.14em] text-foreground uppercase">
+              {tenant?.name || "The Fragrance Store"}
             </span>
-            <span className="text-xs font-semibold text-emerald-600 tracking-wide">
-              Worth Every Bite
+            <span className="text-xs font-semibold text-[#C5A059] tracking-wider uppercase">
+              {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : "House of Brands"}
             </span>
           </Link>
         </div>
@@ -248,55 +277,81 @@ export default function Info() {
                         : "border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
                   }`}
                 >
-                  <div className="flex items-center justify-center px-3.5 py-3 border-r border-border/70 bg-muted/40 text-sm font-bold text-foreground select-none shrink-0 tracking-wide">
-                    +1
+                  <div className="flex items-center gap-1.5 px-3 py-3 border-r border-border/60 bg-muted/30 select-none shrink-0">
+                    <span className="text-base" aria-hidden="true">
+                      🇺🇸
+                    </span>
+                    <span className="text-xs font-bold text-foreground font-mono">
+                      +1
+                    </span>
                   </div>
+
                   <input
                     id="customer-phone"
                     type="tel"
                     inputMode="numeric"
                     autoComplete="tel-national"
-                    pattern="[0-9]*"
-                    maxLength={10}
                     value={phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     onBlur={() => setTouched(true)}
-                    placeholder="Enter phone number..."
-                    className="flex-1 bg-transparent px-3.5 py-3 text-base sm:text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none w-full"
-                    autoFocus
+                    placeholder="2015550123"
+                    className="flex-1 px-3 py-3 text-base sm:text-lg font-mono font-medium tracking-wider bg-transparent outline-none placeholder:text-muted-foreground/40 text-foreground w-full"
+                    maxLength={10}
+                    aria-invalid={touched && !isValid}
+                    aria-describedby={
+                      validationMessage || serverError ? "phone-error" : undefined
+                    }
                   />
+
                   {isValid && (
-                    <div className="pr-3 text-emerald-600 animate-in fade-in zoom-in duration-200">
-                      <CheckCircle2 className="h-4 w-4" />
+                    <div className="pr-3 text-emerald-600 shrink-0">
+                      <CheckCircle2 className="h-5 w-5" />
                     </div>
                   )}
                 </div>
 
-                {/* Validation helper or error message */}
+                {/* Helper / Error Text */}
                 {validationMessage && (
-                  <p className="text-xs text-destructive font-medium pl-1 animate-in fade-in duration-150">
-                    {validationMessage}
+                  <p
+                    id="phone-error"
+                    role="alert"
+                    className="text-xs font-medium text-destructive mt-1.5 flex items-center gap-1"
+                  >
+                    <span>⚠️</span>
+                    <span>{validationMessage}</span>
                   </p>
                 )}
 
                 {serverError && (
-                  <p className="text-xs text-destructive font-medium pl-1 animate-in fade-in duration-150">
-                    {serverError}
+                  <p
+                    id="phone-server-error"
+                    role="alert"
+                    className="text-xs font-medium text-destructive mt-1.5 flex items-center gap-1"
+                  >
+                    <span>⚠️</span>
+                    <span>{serverError}</span>
+                  </p>
+                )}
+
+                {!validationMessage && !serverError && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Format: 10 digits without country code (e.g., 201 555 0123)
                   </p>
                 )}
               </div>
 
-              {/* Primary Continue Button */}
-              <div className="space-y-3 pt-1">
+              {/* Action Buttons: Continue & Back to Cart */}
+              <div className="space-y-3 pt-2">
                 <Button
+                  id="checkout-continue-btn"
                   type="submit"
                   disabled={!isValid || validatePhoneMutation.isPending}
-                  className="h-12 w-full text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full h-12 text-sm font-bold tracking-wide uppercase rounded-xl transition-all shadow-md bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-50"
                 >
                   {validatePhoneMutation.isPending ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Checking...
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Verifying...
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-1.5">
@@ -310,7 +365,7 @@ export default function Info() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => navigate("/cart")}
+                  onClick={() => navigate(`${storefrontPath}/cart`)}
                   className="w-full text-xs text-muted-foreground hover:text-foreground h-9 font-medium"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
@@ -327,6 +382,8 @@ export default function Info() {
           <span>Your information is kept private and secure</span>
         </div>
       </div>
+
+      <CustomerBottomNav active="cart" storefrontPath={storefrontPath} />
     </div>
   );
 }

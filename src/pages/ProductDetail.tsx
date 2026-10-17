@@ -14,7 +14,7 @@ import { ArrowLeft, Check, Minus, Package, Plus, Share2, ShoppingCart, Utensils,
 import { resolveProductImageUrl } from "@/lib/image";
 
 export default function ProductDetail() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, tenantSlug } = useParams<{ slug: string; tenantSlug?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [imageFailed, setImageFailed] = useState(false);
@@ -24,13 +24,20 @@ export default function ProductDetail() {
   const [selectedPricingMode, setSelectedPricingMode] = useState<"standard" | "meal" | "only">("standard");
   const [selectedChoice, setSelectedChoice] = useState<string>("");
 
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: tenantSlug },
+    { enabled: !!tenantSlug, retry: false }
+  );
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const storefrontPath = tenantSlug ? `/store/${tenantSlug}` : "/store/the-fragrance-store";
+
   const { data, isLoading, isError, error } = trpc.product.bySlug.useQuery({ slug: slug! }, { enabled: !!slug, retry: false });
   const relatedQuery = trpc.product.featured.useQuery({ limit: 5 }, { retry: false });
   const utils = trpc.useUtils();
   const addToCart = trpc.cart.add.useMutation({
     onSuccess: async () => {
       await utils.cart.list.invalidate();
-      toast.success("Product added to cart.");
+      toast.success("Fragrance added to cart.");
     },
     onError: (error) => toast.error(error.message || "Could not add product to cart."),
   });
@@ -194,28 +201,73 @@ export default function ProductDetail() {
     setQuantity(minQty);
   }, [minQty]);
 
-  if (isLoading) {
+  if (tenantSlug && storefrontQuery.isLoading) {
     return (
-      <div className="w-full max-w-5xl min-w-0 mx-auto space-y-6 px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden">
+      <div className="w-full max-w-5xl min-w-0 mx-auto space-y-6 px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden pt-8">
         <Skeleton className="h-8 w-48 max-w-full" />
         <Skeleton className="h-[520px] w-full" />
-        <CustomerBottomNav active="categories" />
+        <CustomerBottomNav active="categories" storefrontPath={storefrontPath} />
       </div>
     );
   }
 
-  if (!product || isError) {
+  if (tenantSlug && storefrontQuery.data?.status === "not_found") {
     return (
       <div className="w-full max-w-xl min-w-0 mx-auto flex min-h-[420px] flex-col items-center justify-center text-center px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden">
         <Package className="mb-4 h-12 w-12 text-muted-foreground/40" />
-        <h1 className="text-xl font-semibold break-words">Product not found</h1>
+        <h1 className="text-xl font-semibold break-words">Boutique Not Found</h1>
         <p className="mt-2 text-sm text-muted-foreground break-words">
-          {error?.message ?? "This product may have been archived or is not available."}
+          The requested boutique does not exist or has been relocated.
         </p>
         <Link to="/store/the-fragrance-store">
-          <Button className="mt-5" variant="outline">Back to Home</Button>
+          <Button className="mt-5" variant="outline">Return to Main Storefront</Button>
         </Link>
-        <CustomerBottomNav active="categories" />
+        <CustomerBottomNav active="categories" storefrontPath="/store/the-fragrance-store" />
+      </div>
+    );
+  }
+
+  if (tenantSlug && storefrontQuery.data?.status === "suspended") {
+    return (
+      <div className="w-full max-w-xl min-w-0 mx-auto flex min-h-[420px] flex-col items-center justify-center text-center px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden">
+        <Package className="mb-4 h-12 w-12 text-amber-500/60" />
+        <h1 className="text-xl font-semibold break-words">Boutique Under Curation</h1>
+        <p className="mt-2 text-sm text-muted-foreground break-words">
+          This boutique storefront is currently inactive or undergoing catalog curation.
+        </p>
+        <Link to="/store/the-fragrance-store">
+          <Button className="mt-5" variant="outline">Return to Main Storefront</Button>
+        </Link>
+        <CustomerBottomNav active="categories" storefrontPath="/store/the-fragrance-store" />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-5xl min-w-0 mx-auto space-y-6 px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden pt-8">
+        <Skeleton className="h-8 w-48 max-w-full" />
+        <Skeleton className="h-[520px] w-full" />
+        <CustomerBottomNav active="categories" storefrontPath={storefrontPath} />
+      </div>
+    );
+  }
+
+  // Tenant isolation: if accessing via a boutique slug, ensure product belongs to this boutique
+  const isTenantMismatch = Boolean(tenantSlug && tenant && product && product.supplierId !== tenant.id);
+
+  if (!product || isError || isTenantMismatch) {
+    return (
+      <div className="w-full max-w-xl min-w-0 mx-auto flex min-h-[420px] flex-col items-center justify-center text-center px-4 md:px-0 pb-20 md:pb-0 overflow-x-hidden">
+        <Package className="mb-4 h-12 w-12 text-muted-foreground/40" />
+        <h1 className="text-xl font-semibold break-words">Fragrance not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground break-words">
+          {error?.message ?? "This fragrance may have been archived or is not available in this boutique."}
+        </p>
+        <Link to={storefrontPath}>
+          <Button className="mt-5" variant="outline">Back to Boutique</Button>
+        </Link>
+        <CustomerBottomNav active="categories" storefrontPath={storefrontPath} />
       </div>
     );
   }
@@ -259,16 +311,16 @@ export default function ProductDetail() {
       quantity,
       unitPrice: String(price),
     });
-    toast.success("Product added to cart.");
+    toast.success("Fragrance added to cart.");
     if (destination) navigate(destination);
   }
 
   return (
-    <div className="w-full max-w-6xl min-w-0 mx-auto flex flex-col gap-5 px-4 md:px-0 pb-20 md:pb-6 overflow-x-hidden">
+    <div className="w-full max-w-6xl min-w-0 mx-auto flex flex-col gap-5 px-4 md:px-0 pb-20 md:pb-6 overflow-x-hidden pt-4">
       <section className="flex items-center justify-between md:border-b md:pb-3 w-full min-w-0">
-        <Link to="/store/the-fragrance-store" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link to={`${storefrontPath}/products`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
-          Back to Home
+          Back to Catalog
         </Link>
         <div className="hidden md:flex gap-2">
           <Button variant="outline" size="sm"><Share2 className="mr-2 h-4 w-4" />Share</Button>
@@ -543,11 +595,11 @@ export default function ProductDetail() {
             </div>
 
             <div className="flex flex-col gap-3 md:hidden mt-2 w-full min-w-0">
-              <Button variant="outline" className="h-12 bg-card w-full" onClick={() => addProduct("/")} disabled={isOutOfStock}>
+              <Button variant="outline" className="h-12 bg-card w-full" onClick={() => addProduct(`${storefrontPath}/products`)} disabled={isOutOfStock}>
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 {isOutOfStock ? "Out of Stock" : "Add & Continue Shopping"}
               </Button>
-              <Button className="h-12 bg-primary hover:bg-primary/90 w-full" onClick={() => addProduct("/info")} disabled={isOutOfStock}>
+              <Button className="h-12 bg-primary hover:bg-primary/90 w-full" onClick={() => addProduct(`${storefrontPath}/checkout`)} disabled={isOutOfStock}>
                 <Zap className="mr-2 h-4 w-4" />
                 {isOutOfStock ? "Out of Stock" : "Buy Now"}
               </Button>
@@ -557,7 +609,7 @@ export default function ProductDetail() {
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 {isOutOfStock ? "Out of Stock" : "Add to Cart"}
               </Button>
-              <Button className="h-12 bg-primary hover:bg-primary/90 w-full" onClick={() => addProduct("/info")} disabled={isOutOfStock}>
+              <Button className="h-12 bg-primary hover:bg-primary/90 w-full" onClick={() => addProduct(`${storefrontPath}/checkout`)} disabled={isOutOfStock}>
                 <Zap className="mr-2 h-4 w-4" />
                 {isOutOfStock ? "Out of Stock" : "Buy Now"}
               </Button>
@@ -567,15 +619,15 @@ export default function ProductDetail() {
       </section>
 
       <div className="hidden md:block">
-        <DetailSection title="Dietary & Preparation Info">
-          100% Certified Halal meats. Prepared fresh to order with authentic spices, warm pita, and signature white and hot sauces.
+        <DetailSection title="Fragrance Profile & Notes">
+          {product.description || "Curated fine fragrance formulated with masterfully balanced olfactory pyramid notes. Carefully preserved to ensure maximum longevity and exquisite sillage."}
         </DetailSection>
       </div>
-      <DetailSection title="Restaurant & Kitchen Information">
+      <DetailSection title="Boutique & House Information">
         <div className="grid gap-2 text-sm sm:grid-cols-2">
-          <p><span className="font-medium text-foreground">Restaurant:</span> {product.supplierName ?? "Tex’s Chicken & Burgers"}</p>
-          <p><span className="font-medium text-foreground">Phone / Contact:</span> {product.supplierPhone ?? "+1 (718) 555-0199"}</p>
-          <p className="sm:col-span-2"><span className="font-medium text-foreground">Address:</span> {formatSupplierAddress(product)}</p>
+          <p><span className="font-medium text-foreground">Boutique:</span> {tenant?.name ?? product.supplierName ?? "The Fragrance Store"}</p>
+          <p><span className="font-medium text-foreground">Contact:</span> {product.supplierPhone ?? "+1 (800) 555-0199"}</p>
+          <p className="sm:col-span-2"><span className="font-medium text-foreground">Provenance:</span> {formatSupplierAddress(product)}</p>
         </div>
       </DetailSection>
       {related.length > 0 && (
@@ -583,7 +635,7 @@ export default function ProductDetail() {
           <DetailSection title="You Might Also Like">
             <div className="flex flex-wrap gap-2">
               {related.map((item) => (
-                <Link key={item.slug} to={`/products/${item.slug}`} className="rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                <Link key={item.slug} to={`${storefrontPath}/products/${item.slug}`} className="rounded-md border px-3 py-2 text-sm hover:bg-muted">
                   {item.name}
                 </Link>
               ))}
@@ -592,7 +644,7 @@ export default function ProductDetail() {
         </div>
       )}
 
-      <CustomerBottomNav active="categories" />
+      <CustomerBottomNav active="categories" storefrontPath={storefrontPath} />
     </div>
   );
 }

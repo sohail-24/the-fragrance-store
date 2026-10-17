@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/lib/guestCart";
@@ -8,12 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
+import { ArrowRight, Minus, Package, Plus, ShoppingCart, Store, Trash2 } from "lucide-react";
 
 export default function Cart() {
+  const params = useParams<{ tenantSlug?: string }>();
   const { user } = useAuth();
   const guestCart = useGuestCart();
   const isAuthenticated = !!user;
+
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: params.tenantSlug },
+    { enabled: !!params.tenantSlug, retry: false }
+  );
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const storefrontPath = params.tenantSlug ? `/store/${params.tenantSlug}` : "/store/the-fragrance-store";
+
   const cartQuery = trpc.cart.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const utils = trpc.useUtils();
   const updateMutation = trpc.cart.update.useMutation({ onSuccess: () => utils.cart.list.invalidate() });
@@ -23,12 +33,30 @@ export default function Cart() {
   const subtotal = isAuthenticated ? (cartQuery.data?.total ?? 0) : guestCart.total;
   const isLoading = isAuthenticated && cartQuery.isLoading;
 
+  if (params.tenantSlug && storefrontQuery.data?.status === "not_found") {
+    return (
+      <div className="mx-auto max-w-xl py-16 text-center space-y-4 px-4">
+        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center justify-center mx-auto">
+          <Store className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-serif font-bold text-foreground">Boutique Not Found</h2>
+        <p className="text-sm text-muted-foreground">
+          The requested boutique does not exist or has been relocated.
+        </p>
+        <Link to="/store/the-fragrance-store">
+          <Button variant="outline">Return to Main Storefront</Button>
+        </Link>
+        <CustomerBottomNav active="cart" storefrontPath="/store/the-fragrance-store" />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 md:px-0 pb-24 md:pb-8 pt-4">
       <PageHeader
-        backTo="/"
+        backTo={storefrontPath}
         backLabel="Back to Home"
-        title="Cart"
+        title="Shopping Bag"
         description="Review items before checkout."
         actions={items.length > 0 ? (
           <Button variant="outline" size="sm" onClick={() => (isAuthenticated ? clearMutation.mutate() : guestCart.clear())}>
@@ -44,9 +72,9 @@ export default function Cart() {
         <Card>
           <CardContent className="py-16 text-center">
             <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-            <h3 className="text-lg font-semibold">Your cart is empty</h3>
-            <p className="mb-6 mt-1 text-sm text-muted-foreground">Browse Products to add items.</p>
-            <Link to="/products"><Button>Browse Products</Button></Link>
+            <h3 className="text-lg font-semibold">Your shopping bag is empty</h3>
+            <p className="mb-6 mt-1 text-sm text-muted-foreground">Browse the catalog to add items.</p>
+            <Link to={`${storefrontPath}/products`}><Button>Browse Products</Button></Link>
           </CardContent>
         </Card>
       ) : (
@@ -64,7 +92,7 @@ export default function Cart() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <Link to={`/products/${item.productSlug}`} className="font-medium hover:text-primary">{item.productName}</Link>
+                          <Link to={`${storefrontPath}/products/${item.productSlug}`} className="font-medium hover:text-primary">{item.productName}</Link>
                           {item.selectedOption ? (
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               <span className="inline-flex items-center rounded bg-[#111111] px-2 py-0.5 text-xs font-semibold text-[#E0C895] border border-[#C5A059]/40">
@@ -107,12 +135,14 @@ export default function Cart() {
               <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
               <Separator />
               <SummaryRow label="Total" value={formatCurrency(subtotal)} strong />
-              <Link to="/info"><Button className="h-11 w-full bg-[#111111] hover:bg-[#C5A059] hover:text-[#111111] text-[#FDFBF7] font-semibold tracking-wider uppercase text-xs transition-colors">Proceed to Checkout<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
-              <Link to="/store/the-fragrance-store"><Button variant="outline" className="w-full">Continue Shopping</Button></Link>
+              <Link to={`${storefrontPath}/checkout`}><Button className="h-11 w-full bg-[#111111] hover:bg-[#C5A059] hover:text-[#111111] text-[#FDFBF7] font-semibold tracking-wider uppercase text-xs transition-colors">Proceed to Checkout<ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+              <Link to={storefrontPath || "/store/the-fragrance-store"}><Button variant="outline" className="w-full">Continue Shopping</Button></Link>
             </CardContent>
           </Card>
         </div>
       )}
+
+      <CustomerBottomNav active="cart" storefrontPath={storefrontPath} />
     </div>
   );
 }

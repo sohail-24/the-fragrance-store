@@ -24,6 +24,7 @@ import {
   authenticateRequest,
   clearSessionCookies,
   issueSessionCookies,
+  signCustomerToken,
 } from "./auth/session";
 import {
   activeAdminUser,
@@ -349,9 +350,217 @@ export const authRouter = createRouter({
       }
     }),
 
-  refresh: publicQuery.mutation(async ({ ctx }) => ({ user: publicUser(await authenticateAdminRequest(ctx.req.headers, ctx.resHeaders)) })),
+  loginCustomer: publicQuery
+    .input(
+      z.object({
+        email: z.string().trim().email("Please provide a valid email address."),
+        password: z.string().min(1, "Password is required."),
+        tenantSlug: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const user = await findUserByEmail(email);
+
+      // Verify user exists, is active, and has passwordHash
+      if (!user?.passwordHash || !user.isActive) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid email or password.",
+        });
+      }
+
+      const isValid = await verifySecret(input.password, user.passwordHash);
+      if (!isValid) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid email or password.",
+        });
+      }
+
+      await updateLastSignIn(user.id);
+      await issueSessionCookies(user, ctx.req.headers, ctx.resHeaders);
+      const token = await signCustomerToken(user);
+      const refreshed = await findUserById(user.id);
+      return { user: publicUser(refreshed ?? user), token };
+    }),
+
+  loginEmail: publicQuery
+    .input(
+      z.object({
+        email: z.string().trim().email("Please provide a valid email address."),
+        password: z.string().min(1, "Password is required."),
+        tenantSlug: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      const user = await findUserByEmail(email);
+      if (!user?.passwordHash || !user.isActive) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid email or password.",
+        });
+      }
+      const isValid = await verifySecret(input.password, user.passwordHash);
+      if (!isValid) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid email or password.",
+        });
+      }
+      await updateLastSignIn(user.id);
+      await issueSessionCookies(user, ctx.req.headers, ctx.resHeaders);
+      const token = await signCustomerToken(user);
+      const refreshed = await findUserById(user.id);
+      return { user: publicUser(refreshed ?? user), token };
+    }),
+
+  registerCustomer: publicQuery
+    .input(
+      z.object({
+        email: z.string().trim().email("Please enter a valid email address."),
+        password: z.string().min(6, "Password must be at least 6 characters."),
+        confirmPassword: z.string().min(6, "Password confirmation is required.").optional(),
+        name: z.string().trim().max(100).optional(),
+        tenantSlug: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+
+      if (input.confirmPassword !== undefined && input.password !== input.confirmPassword) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Passwords do not match.",
+        });
+      }
+
+      const existing = await findUserByEmail(email);
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An account with this email already exists.",
+        });
+      }
+
+      let companyId: number | undefined;
+      if (input.tenantSlug) {
+        const tenant = await findCompanyBySlug(input.tenantSlug);
+        if (tenant) {
+          companyId = tenant.id;
+        }
+      }
+
+      const passwordHash = await hashSecret(input.password);
+      const displayName = input.name?.trim() || email.split("@")[0];
+
+      // Security boundary: Customer accounts strictly receive "user" role.
+      // Under no circumstances can customer registration assign "owner", "admin", or "super_master",
+      // even if input email matches ownerEmail or superMasterEmail.
+      // Customers do NOT receive tenantMemberships records.
+      const result = await getDb()
+        .insert(users)
+        .values({
+          unionId: `customer:${email}`,
+          authProvider: "local",
+          name: displayName,
+          email,
+          passwordHash,
+          role: "user",
+          companyId,
+          isActive: true,
+          lastSignInAt: new Date(),
+        })
+        .returning({ id: users.id });
+
+      const createdUser = await findUserById(result[0].id);
+      if (!createdUser) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create customer account.",
+        });
+      }
+
+      await issueSessionCookies(createdUser, ctx.req.headers, ctx.resHeaders);
+      const token = await signCustomerToken(createdUser);
+      return { user: publicUser(createdUser), token };
+    }),
+
+  register: publicQuery
+    .input(
+      z.object({
+        email: z.string().trim().email("Please enter a valid email address."),
+        password: z.string().min(6, "Password must be at least 6 characters."),
+        confirmPassword: z.string().optional(),
+        name: z.string().optional(),
+        tenantSlug: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      if (input.confirmPassword !== undefined && input.password !== input.confirmPassword) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Passwords do not match.",
+        });
+      }
+      const existing = await findUserByEmail(email);
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An account with this email already exists.",
+        });
+      }
+      let companyId: number | undefined;
+      if (input.tenantSlug) {
+        const tenant = await findCompanyBySlug(input.tenantSlug);
+        if (tenant) companyId = tenant.id;
+      }
+      const passwordHash = await hashSecret(input.password);
+      const displayName = input.name?.trim() || email.split("@")[0];
+
+      const result = await getDb()
+        .insert(users)
+        .values({
+          unionId: `customer:${email}`,
+          authProvider: "local",
+          name: displayName,
+          email,
+          passwordHash,
+          role: "user",
+          companyId,
+          isActive: true,
+          lastSignInAt: new Date(),
+        })
+        .returning({ id: users.id });
+
+      const createdUser = await findUserById(result[0].id);
+      if (!createdUser) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create customer account.",
+        });
+      }
+
+      await issueSessionCookies(createdUser, ctx.req.headers, ctx.resHeaders);
+      const token = await signCustomerToken(createdUser);
+      return { user: publicUser(createdUser), token };
+    }),
+
+  refresh: publicQuery.mutation(async ({ ctx }) => {
+    if (ctx.user) {
+      return { user: publicUser(ctx.user) };
+    }
+    const adminUser = await authenticateAdminRequest(ctx.req.headers, ctx.resHeaders);
+    return { user: publicUser(adminUser) };
+  }),
 
   logout: publicQuery.mutation(async ({ ctx }) => {
+    if (ctx.user) {
+      await updateUserRefreshTokenHash(ctx.user.id, null);
+    }
+    clearSessionCookies(ctx.req.headers, ctx.resHeaders);
     clearAdminSessionCookies(ctx.req.headers, ctx.resHeaders);
     clearTenantAdminSessionCookie(ctx.req.headers, ctx.resHeaders);
     return { success: true };

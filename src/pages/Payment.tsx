@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
-import { CheckCircle2, Clock, Lock, ShoppingBag, Store } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { CheckCircle2, Clock, Lock, ShoppingBag, Store, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/lib/guestCart";
 import { trpc } from "@/providers/trpc";
@@ -8,8 +8,11 @@ import { formatCurrency } from "@/lib/i18n";
 import { useCheckoutPhone } from "@/lib/checkoutState";
 import { getPlacedOrder, usePlacedOrder } from "@/lib/placedOrder";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 
 export default function Payment() {
+  const params = useParams<{ tenantSlug?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAuthenticated = !!user;
@@ -17,6 +20,13 @@ export default function Payment() {
   const { phone } = useCheckoutPhone();
   const { order: placedOrder } = usePlacedOrder();
   const currentOrder = placedOrder || getPlacedOrder();
+
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: params.tenantSlug },
+    { enabled: !!params.tenantSlug, retry: false }
+  );
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const storefrontPath = params.tenantSlug ? `/store/${params.tenantSlug}` : "/store/the-fragrance-store";
 
   // Selected payment method state (default to counter)
   const [selectedMethod, setSelectedMethod] = useState<"counter">("counter");
@@ -45,16 +55,16 @@ export default function Payment() {
   useEffect(() => {
     const digits = (currentOrder?.lastFour || phone).replace(/\D/g, "");
     if (!currentOrder && (!phone || digits.length < 4)) {
-      navigate("/info", { replace: true });
+      navigate(`${storefrontPath}/info`, { replace: true });
     }
-  }, [currentOrder, phone, navigate]);
+  }, [currentOrder, phone, navigate, storefrontPath]);
 
   // Safeguard: Redirect to /cart if cart is empty and no placed order exists
   useEffect(() => {
     if (!currentOrder && !cartQuery.isLoading && cartItems.length === 0) {
-      navigate("/cart", { replace: true });
+      navigate(`${storefrontPath}/cart`, { replace: true });
     }
-  }, [currentOrder, cartItems.length, cartQuery.isLoading, navigate]);
+  }, [currentOrder, cartItems.length, cartQuery.isLoading, navigate, storefrontPath]);
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center items-center px-4 py-8 sm:py-12 bg-muted/20">
@@ -62,22 +72,22 @@ export default function Payment() {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2">
           <Link
-            to="/store/the-fragrance-store"
+            to={storefrontPath}
             className="group flex flex-col items-center focus:outline-none transition-transform active:scale-95"
-            title="Tex’s Chicken & Burgers"
+            title={tenant?.name || "The Fragrance Store"}
           >
-            <div className="h-16 w-16 rounded-2xl bg-white shadow-md border border-border/50 p-2 flex items-center justify-center transition-all group-hover:shadow-lg">
+            <div className="h-16 w-16 rounded-2xl bg-[#111111] border border-[#C5A059]/40 p-2 flex items-center justify-center transition-all group-hover:border-[#C5A059] shadow-sm">
               <img
-                src="/branding/logo.png"
-                alt="Tex’s Chicken & Burgers"
+                src={tenant?.logo || "/fragrance/brand-mark.svg"}
+                alt={tenant?.name || "The Fragrance Store"}
                 className="h-full w-full object-contain"
               />
             </div>
-            <span className="mt-3 text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
-              Tex’s Chicken & Burgers
+            <span className="mt-3 text-base sm:text-lg font-serif font-bold tracking-[0.14em] text-foreground uppercase">
+              {tenant?.name || "The Fragrance Store"}
             </span>
-            <span className="text-xs font-semibold text-emerald-600 tracking-wide">
-              Worth Every Bite
+            <span className="text-xs font-semibold text-[#C5A059] tracking-wider uppercase">
+              {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : "House of Brands"}
             </span>
           </Link>
         </div>
@@ -166,6 +176,18 @@ export default function Payment() {
               </div>
             </div>
 
+            {/* View Order Confirmation link if order is placed */}
+            {currentOrder?.id && (
+              <div className="pt-2">
+                <Link to={`${storefrontPath}/orders/${encodeURIComponent(currentOrder.id)}`}>
+                  <Button className="w-full h-11 bg-[#111111] hover:bg-[#C5A059] hover:text-[#111111] text-[#FDFBF7] font-semibold text-xs tracking-wider uppercase">
+                    <span>View Order Confirmation</span>
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {/* Privacy & Security Note */}
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75 pt-2 border-t border-border/50">
               <Lock className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
@@ -175,7 +197,7 @@ export default function Payment() {
             {/* Back to Home Page Navigation */}
             <div className="text-center pt-1 border-t border-border/40">
               <Link
-                to="/store/the-fragrance-store"
+                to={storefrontPath}
                 id="back-to-home-link"
                 className="text-xs font-medium text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30"
               >
@@ -186,6 +208,8 @@ export default function Payment() {
           </CardContent>
         </Card>
       </div>
+
+      <CustomerBottomNav active="cart" storefrontPath={storefrontPath} />
     </div>
   );
 }

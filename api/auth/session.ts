@@ -108,6 +108,10 @@ export function clearSessionCookies(
   }
 }
 
+export async function signCustomerToken(user: User, type: SessionTokenType = "access") {
+  return signToken(user, type);
+}
+
 export async function authenticateRequest(
   requestHeaders: Headers,
   responseHeaders?: Headers,
@@ -117,9 +121,27 @@ export async function authenticateRequest(
   const refreshToken = cookies[Session.refreshCookieName];
 
   if (accessToken) {
-    const userId = await verifyToken(accessToken, "access");
-    const user = await findUserById(userId);
-    if (user?.isActive) return user;
+    try {
+      const userId = await verifyToken(accessToken, "access");
+      const user = await findUserById(userId);
+      if (user?.isActive) return user;
+    } catch {
+      // Continue to check bearer or refresh token
+    }
+  }
+
+  const authHeader = requestHeaders.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const bearerToken = authHeader.slice(7).trim();
+    if (bearerToken) {
+      try {
+        const userId = await verifyToken(bearerToken, "access");
+        const user = await findUserById(userId);
+        if (user?.isActive) return user;
+      } catch {
+        // Bearer token was not a valid customer session token
+      }
+    }
   }
 
   if (!refreshToken || !responseHeaders) {

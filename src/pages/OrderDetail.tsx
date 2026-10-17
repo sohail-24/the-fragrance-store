@@ -24,7 +24,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertCircle, Building2, FileText, MapPin, Package, Truck, User } from "lucide-react";
+import { AlertCircle, Building2, CheckCircle2, FileText, MapPin, Package, Store, Truck, User } from "lucide-react";
+import { getPlacedOrderById, getPlacedOrder, type PlacedOrder } from "@/lib/placedOrder";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 
 type OrderStatus =
   | "pending"
@@ -120,17 +122,24 @@ const deliveryLabels: Record<DeliveryEstimate, string> = {
 };
 
 export default function OrderDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id, tenantSlug } = useParams<{ id: string; tenantSlug?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const ownerMode = getAppRole(user) !== "buyer";
   const orderId = Number(id ?? 0);
+  const storefrontPath = tenantSlug ? `/store/${tenantSlug}` : "/store/the-fragrance-store";
+
   const orderQuery = trpc.order.detail.useQuery(
     { orderId },
-    { enabled: orderId > 0, retry: false, refetchInterval: ownerMode ? 10000 : false },
+    { enabled: orderId > 0 && !!user, retry: false, refetchInterval: ownerMode ? 10000 : false },
   );
   const order = orderQuery.data as OrderDetailData | undefined;
+
+  const placedSnapshot = useMemo(() => {
+    if (!id) return null;
+    return getPlacedOrderById(id) || (id.startsWith("ORD") ? getPlacedOrder() : null);
+  }, [id]);
 
   const statusMutation = trpc.order.status.useMutation({
     onSuccess: async () => {
@@ -169,19 +178,122 @@ export default function OrderDetail() {
     onError: (error) => toast.error(error.message),
   });
 
-  if (orderQuery.isLoading) {
+  if (orderQuery.isLoading && !placedSnapshot) {
     return <OrderDetailSkeleton />;
+  }
+
+  // If no DB order but we have a saved guest order snapshot, render snapshot confirmation
+  if (!order && placedSnapshot) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-6 px-4 md:px-0 py-8 pb-24">
+        <PageHeader
+          backTo={storefrontPath}
+          backLabel="Back to Storefront"
+          title={`Order ${placedSnapshot.ticketNumber}`}
+          description="Your order has been received and confirmed."
+          actions={
+            <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
+              Confirmed
+            </Badge>
+          }
+        />
+
+        <div className="grid gap-6 md:grid-cols-[1fr_340px]">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Order Confirmation Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-xs text-muted-foreground block">Ticket Number</span>
+                    <span className="font-mono font-bold text-base text-foreground">{placedSnapshot.ticketNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block">Payment Method</span>
+                    <span className="font-semibold text-foreground">{placedSnapshot.paymentMethod || "Pay at Counter"}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Order Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-center">Qty</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {placedSnapshot.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <span className="font-medium text-foreground block">{item.productName}</span>
+                          {item.selectedOption && (
+                            <span className="text-xs text-[#9E7B35] font-semibold">{item.selectedOption}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(item.itemTotal)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          <aside className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Order Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <SummaryRow label="Subtotal" value={formatCurrency(placedSnapshot.subtotal)} />
+                <Separator />
+                <SummaryRow label="Total" value={formatCurrency(placedSnapshot.total)} strong />
+                <div className="pt-3">
+                  <Button
+                    onClick={() => navigate(`${storefrontPath}/products`)}
+                    className="w-full bg-[#111111] hover:bg-[#C5A059] hover:text-[#111111] text-[#FDFBF7] font-semibold uppercase text-xs tracking-wider"
+                  >
+                    Continue Shopping
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+
+        <CustomerBottomNav active="account" storefrontPath={storefrontPath} />
+      </div>
+    );
   }
 
   if (!order || orderQuery.isError) {
     return (
-      <div className="mx-auto max-w-3xl py-16">
+      <div className="mx-auto max-w-3xl py-16 px-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Unable to load order</AlertTitle>
           <AlertDescription>{orderQuery.error?.message ?? "Order not found."}</AlertDescription>
         </Alert>
-        <Button className="mt-4" variant="outline" onClick={() => navigate(user ? "/orders" : "/")}>
+        <Button className="mt-4" variant="outline" onClick={() => navigate(user ? "/orders" : storefrontPath)}>
           {user ? "Back to Orders" : "Back to Home"}
         </Button>
       </div>
@@ -191,10 +303,10 @@ export default function OrderDetail() {
   const editingDisabled = order.status === "delivered" || order.status === "cancelled";
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-4 md:px-0 pb-20">
       <PageHeader
-        backTo={user ? "/orders" : "/"}
-        backLabel={user ? "Back to Orders" : "Back to Home"}
+        backTo={user ? "/orders" : storefrontPath}
+        backLabel={user ? "Back to Orders" : "Back to Storefront"}
         title={`Order #${order.orderNumber}`}
         actions={<OrderStatusBadge status={order.status} />}
       />
@@ -351,6 +463,7 @@ export default function OrderDetail() {
           </Card>
         </aside>
       </section>
+      {!ownerMode && <CustomerBottomNav active="account" storefrontPath={storefrontPath} />}
     </div>
   );
 }

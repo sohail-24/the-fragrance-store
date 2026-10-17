@@ -34,6 +34,7 @@ import Settings from "./pages/Settings";
 import OwnerPlaceholder from "./pages/OwnerPlaceholder";
 import AdminLogin from "./pages/AdminLogin";
 import About from "./pages/About";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 function PageLoader() {
@@ -140,11 +141,44 @@ function AppRoutes() {
         <Route path="/" element={<AdminLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/super-master/login" element={<AdminLogin />} />
+
+        {/* Canonical Multi-Tenant Storefront Routes */}
         <Route path="/store" element={<Navigate to="/store/the-fragrance-store" replace />} />
         <Route path="/store/:tenantSlug" element={<LandingPage />} />
+        <Route path="/store/:tenantSlug/products" element={<Products />} />
+        <Route path="/store/:tenantSlug/products/:slug" element={<ProductDetail />} />
+        <Route path="/store/:tenantSlug/cart" element={<Cart />} />
+        <Route path="/store/:tenantSlug/checkout" element={<Info />} />
+        <Route path="/store/:tenantSlug/info" element={<Info />} />
+        <Route path="/store/:tenantSlug/payment" element={<Payment />} />
+        <Route path="/store/:tenantSlug/orders/:id" element={<OrderDetail />} />
+        <Route path="/store/:tenantSlug/about" element={<About />} />
+        <Route path="/store/:tenantSlug/account" element={<Account />} />
+
+        {/* Storefront Aliases */}
         <Route path="/storefront" element={<Navigate to="/store/the-fragrance-store" replace />} />
         <Route path="/storefront/:tenantSlug" element={<LandingPage />} />
+        <Route path="/storefront/:tenantSlug/products" element={<Products />} />
+        <Route path="/storefront/:tenantSlug/products/:slug" element={<ProductDetail />} />
+        <Route path="/storefront/:tenantSlug/cart" element={<Cart />} />
+        <Route path="/storefront/:tenantSlug/checkout" element={<Info />} />
+        <Route path="/storefront/:tenantSlug/info" element={<Info />} />
+        <Route path="/storefront/:tenantSlug/payment" element={<Payment />} />
+        <Route path="/storefront/:tenantSlug/orders/:id" element={<OrderDetail />} />
+        <Route path="/storefront/:tenantSlug/about" element={<About />} />
+        <Route path="/storefront/:tenantSlug/account" element={<Account />} />
+
         <Route path="/w/:tenantSlug" element={<LandingPage />} />
+        <Route path="/w/:tenantSlug/products" element={<Products />} />
+        <Route path="/w/:tenantSlug/products/:slug" element={<ProductDetail />} />
+        <Route path="/w/:tenantSlug/cart" element={<Cart />} />
+        <Route path="/w/:tenantSlug/checkout" element={<Info />} />
+        <Route path="/w/:tenantSlug/info" element={<Info />} />
+        <Route path="/w/:tenantSlug/payment" element={<Payment />} />
+        <Route path="/w/:tenantSlug/orders/:id" element={<OrderDetail />} />
+        <Route path="/w/:tenantSlug/about" element={<About />} />
+        <Route path="/w/:tenantSlug/account" element={<Account />} />
+
         <Route path="/about" element={<About />} />
         {/* Legacy customer login remains in source but is intentionally inactive. */}
         <Route path="/login" element={<Navigate to="/admin/login" replace />} />

@@ -466,7 +466,7 @@ export default function LandingPage() {
   function handleAddGenuineProduct(product: MarketplaceProduct) {
     const options = parseProductOptions(product.options);
     if (options.length > 0) {
-      navigate(`/products/${product.slug}`);
+      navigate(`${storefrontPath}/products/${product.slug}`);
       toast.info("Please select size and concentration.");
       return;
     }
@@ -643,26 +643,24 @@ export default function LandingPage() {
               Home
             </Link>
             <Link
-              to="/products"
+              to={`${storefrontPath}/products`}
               className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1"
             >
               Shop
             </Link>
             <a
-              href="/#categories-section"
+              href="#categories-section"
               onClick={(e) => {
-                if (window.location.pathname === "/") {
-                  e.preventDefault();
-                  const el = document.getElementById("categories-section");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }
+                e.preventDefault();
+                const el = document.getElementById("categories-section");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
               }}
               className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1"
             >
               Categories
             </a>
             <Link
-              to="/cart"
+              to={`${storefrontPath}/cart`}
               className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1 flex items-center gap-1.5"
             >
               <span>Cart</span>
@@ -673,7 +671,7 @@ export default function LandingPage() {
               )}
             </Link>
             <Link
-              to={isAuthenticated ? "/dashboard" : "/admin/login"}
+              to={`${storefrontPath}/account`}
               className="text-[#C4BEB3] hover:text-[#FDFBF7] font-medium transition-colors py-1 flex items-center gap-1"
             >
               <UserRound className="h-3.5 w-3.5 text-[#C5A059]" />
@@ -697,23 +695,15 @@ export default function LandingPage() {
             )}
 
             {/* Desktop Account Link */}
-            {isAuthenticated ? (
-              <Link
-                to="/dashboard"
-                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
-              >
-                <UserRound className="h-4 w-4 text-[#C5A059]" />
-                <span className="truncate max-w-[80px]">{user?.name ?? "Account"}</span>
-              </Link>
-            ) : (
-              <Link
-                to="/admin/login"
-                className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
-              >
-                <UserRound className="h-4 w-4 text-[#C5A059]" />
-                <span>Sign In</span>
-              </Link>
-            )}
+            <Link
+              to={`${storefrontPath}/account`}
+              className="hidden lg:flex items-center gap-1.5 text-xs tracking-wider uppercase text-[#C4BEB3] hover:text-[#FDFBF7] transition-colors mr-1"
+            >
+              <UserRound className="h-4 w-4 text-[#C5A059]" />
+              <span className="truncate max-w-[80px]">
+                {isAuthenticated ? (user?.name?.split(" ")[0] ?? "Account") : "Sign In"}
+              </span>
+            </Link>
 
             {/* 4. Search Icon Button (Toggles search drawer / bar) */}
             <button
@@ -740,7 +730,7 @@ export default function LandingPage() {
 
             {/* 5. Shopping Bag Icon Button with Live Counter Badge */}
             <Link
-              to="/cart"
+              to={`${storefrontPath}/cart`}
               id="header-cart-btn"
               className="relative p-2 text-[#FDFBF7] hover:text-[#C5A059] transition-colors group flex items-center justify-center"
               aria-label={`Shopping Bag (${cartCount} items)`}
@@ -888,21 +878,21 @@ export default function LandingPage() {
                     Home Storefront
                   </Link>
                   <Link
-                    to="/products"
+                    to={`${storefrontPath}/products`}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="hover:text-[#FDFBF7] py-1"
                   >
                     All Products Catalog
                   </Link>
                   <Link
-                    to="/cart"
+                    to={`${storefrontPath}/cart`}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="hover:text-[#FDFBF7] py-1"
                   >
                     Shopping Cart ({cartCount})
                   </Link>
                   <Link
-                    to="/about"
+                    to={`${storefrontPath}/about`}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="hover:text-[#FDFBF7] py-1"
                   >
@@ -1178,7 +1168,7 @@ export default function LandingPage() {
           </div>
 
           <Link
-            to="/products"
+            to={`${storefrontPath}/products`}
             className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#C5A059] hover:text-[#E0C895] transition-colors shrink-0"
           >
             <span>VIEW ALL</span>
@@ -1226,7 +1216,10 @@ export default function LandingPage() {
                     key={product.id}
                     className="group flex flex-col justify-between bg-white text-[#111111] rounded-none overflow-hidden border border-[#E4E0D8] hover:border-[#C5A059] transition-all shadow-xs"
                   >
-                    <div className="relative aspect-square bg-[#0E0D0B] overflow-hidden">
+                    <Link
+                      to={`${storefrontPath}/products/${product.slug}`}
+                      className="relative aspect-square bg-[#0E0D0B] overflow-hidden block"
+                    >
                       <img
                         src={resolveProductImageUrl(product.image ?? "/fragrance/hero-fragrance.svg")}
                         alt={product.name}
@@ -1235,16 +1228,18 @@ export default function LandingPage() {
                       <span className="absolute bottom-2 right-2 bg-black/80 text-[#FDFBF7] text-[8.5px] font-mono px-1.5 py-0.5">
                         {product.unitSize ?? "100 ml"}
                       </span>
-                    </div>
+                    </Link>
 
                     <div className="p-3 sm:p-4 flex flex-col justify-between flex-1 bg-[#FDFBF7]">
                       <div>
                         <span className="text-[9px] tracking-[0.2em] uppercase text-[#9E7B35] font-bold block">
                           {product.categoryName ?? "Parfum"}
                         </span>
-                        <h3 className="font-serif text-sm sm:text-base font-medium text-[#111111] group-hover:text-[#9E7B35] transition-colors line-clamp-1 mt-0.5">
-                          {product.name}
-                        </h3>
+                        <Link to={`${storefrontPath}/products/${product.slug}`}>
+                          <h3 className="font-serif text-sm sm:text-base font-medium text-[#111111] group-hover:text-[#9E7B35] transition-colors line-clamp-1 mt-0.5">
+                            {product.name}
+                          </h3>
+                        </Link>
                       </div>
 
                       <div className="mt-3 pt-2.5 border-t border-[#E4E0D8] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1498,9 +1493,9 @@ export default function LandingPage() {
               </span>
               <ul className="space-y-1.5 text-xs text-[#A8A196]">
                 <li><Link to={storefrontPath} className="hover:text-[#FDFBF7]">Home</Link></li>
-                <li><Link to="/products" className="hover:text-[#FDFBF7]">Shop All</Link></li>
-                <li><Link to="/cart" className="hover:text-[#FDFBF7]">Cart ({cartCount})</Link></li>
-                <li><Link to="/about" className="hover:text-[#FDFBF7]">About Store</Link></li>
+                <li><Link to={`${storefrontPath}/products`} className="hover:text-[#FDFBF7]">Shop All</Link></li>
+                <li><Link to={`${storefrontPath}/cart`} className="hover:text-[#FDFBF7]">Cart ({cartCount})</Link></li>
+                <li><Link to={`${storefrontPath}/about`} className="hover:text-[#FDFBF7]">About Store</Link></li>
                 <li>
                   <Link to="/admin/login" className="hover:text-[#FDFBF7]">
                     Staff / Admin Sign In

@@ -13,11 +13,15 @@ export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerB
   const { user } = useAuth();
   const guestCart = useGuestCart();
   const isAuthenticated = !!user;
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+  const pathParts = currentPath.split("/").filter(Boolean);
+  const isTenantStorefront =
+    pathParts.length >= 2 &&
+    (pathParts[0] === "store" || pathParts[0] === "storefront" || pathParts[0] === "w");
+  const tenantSlug = isTenantStorefront ? pathParts[1] : undefined;
   const targetStorefront =
     storefrontPath ||
-    (typeof window !== "undefined" && window.location.pathname.startsWith("/store")
-      ? window.location.pathname.split("#")[0]
-      : "/store/the-fragrance-store");
+    (tenantSlug ? `/store/${tenantSlug}` : "/store/the-fragrance-store");
 
   const cartQuery = trpc.cart.list.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -39,9 +43,15 @@ export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerB
   }
 
   function handleHomeClick(e: React.MouseEvent) {
-    if (typeof window !== "undefined" && (window.location.pathname === targetStorefront || window.location.pathname.startsWith("/store"))) {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      const normalizedPath = window.location.pathname.replace(/\/+$/, "");
+      const normalizedTarget = targetStorefront.replace(/\/+$/, "");
+      if (normalizedPath === normalizedTarget) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
     }
   }
 
@@ -81,7 +91,7 @@ export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerB
 
         {/* 2. Shop */}
         <Link
-          to="/products"
+          to={`${targetStorefront}/products`}
           id="mobile-nav-shop"
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
             active === "shop"
@@ -134,7 +144,7 @@ export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerB
 
         {/* 4. Cart */}
         <Link
-          to="/cart"
+          to={`${targetStorefront}/cart`}
           id="mobile-nav-cart"
           className={`relative flex flex-col items-center justify-center py-1 transition-colors group ${
             active === "cart"
@@ -167,7 +177,7 @@ export function CustomerBottomNav({ active = "home", storefrontPath }: CustomerB
 
         {/* 5. Account */}
         <Link
-          to={isAuthenticated ? "/dashboard" : "/admin/login"}
+          to={`${targetStorefront}/account`}
           id="mobile-nav-account"
           className={`flex flex-col items-center justify-center py-1 transition-colors group ${
             active === "account"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { resolveProductImageUrl } from "@/lib/image";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   ArrowUpDown,
@@ -36,6 +37,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Star,
+  Store,
   UserRound,
   Eye,
   Pencil,
@@ -155,8 +157,10 @@ function matchesSearch(product: CatalogProduct, query: string): boolean {
 
 export default function Products() {
   const { user } = useAuth();
+  const params = useParams<{ tenantSlug?: string }>();
   const role = getAppRole(user);
-  const ownerMode = role !== "buyer";
+  const isStorefront = Boolean(params.tenantSlug);
+  const ownerMode = !isStorefront && role !== "buyer";
 
   if (ownerMode) {
     return <OwnerProductCatalog />;
@@ -166,12 +170,26 @@ export default function Products() {
 }
 
 function BuyerMarketplace() {
+  const params = useParams<{ tenantSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTenant = params.tenantSlug || searchParams.get("tenant") || undefined;
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
+
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: requestedTenant },
+    { retry: false }
+  );
+
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const isWebsiteA = Boolean(
+    tenant && (tenant.displayLabel === "Website A" || tenant.slug === "the-fragrance-store")
+  );
+  const storefrontPath = tenant?.slug ? `/store/${tenant.slug}` : "/store/the-fragrance-store";
+
   const categoryParam = searchParams.get("category");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
-  const { user } = useAuth();
-  const utils = trpc.useUtils();
 
   const categoriesQuery = trpc.category.list.useQuery(undefined, { retry: false });
 
@@ -227,7 +245,7 @@ function BuyerMarketplace() {
   const apiSortOrder: "asc" | "desc" = sort === "price_asc" ? "asc" : "desc";
 
   const supplierIdParam = searchParams.get("supplierId");
-  const targetSupplierId = supplierIdParam ? Number(supplierIdParam) : undefined;
+  const targetSupplierId = tenant?.id || (supplierIdParam ? Number(supplierIdParam) : undefined);
 
   const productsQuery = trpc.product.list.useQuery(
     {
@@ -250,13 +268,27 @@ function BuyerMarketplace() {
   const addToCart = trpc.cart.add.useMutation({
     onSuccess: async () => {
       await utils.cart.list.invalidate();
-      toast.success("Product added to cart.");
+      toast.success("Fragrance added to bag.");
     },
-    onError: (error) => toast.error(error.message || "Could not add product to cart."),
+    onError: (error) => toast.error(error.message || "Could not add fragrance to bag."),
   });
+
+  const isFoodItem = (p: CatalogProduct) => {
+    const text = `${p.name || ""} ${p.categoryName || ""} ${p.description || ""} ${p.tags || ""} ${p.supplierName || ""}`.toLowerCase();
+    const foodKeywords = [
+      "burger", "chicken", "fries", "wing", "platter", "halal", "sauce",
+      "sandwich", "tender", "mac n", "macaroni", "potato", "corn", "coleslaw",
+      "biscuit", "meal", "combo", "rice", "gyro", "falafel", "beverage",
+      "snapple", "soda", "drink", "catering", "tex’s", "texs", "shahs"
+    ];
+    return foodKeywords.some((keyword) => text.includes(keyword));
+  };
 
   const products = useMemo(() => {
     let list = (productsQuery.data ?? []) as CatalogProduct[];
+    if (isWebsiteA) {
+      list = list.filter((p) => !isFoodItem(p));
+    }
     if (targetCategoryId !== undefined && !isInvalidCategory) {
       list = list.filter((p) => p.categoryId === targetCategoryId);
     }
@@ -264,7 +296,89 @@ function BuyerMarketplace() {
       return [...list].sort((a, b) => (Number(b.rating) || 4.8) - (Number(a.rating) || 4.8));
     }
     return list;
-  }, [productsQuery.data, targetCategoryId, isInvalidCategory, sort]);
+  }, [productsQuery.data, targetCategoryId, isInvalidCategory, sort, isWebsiteA]);
+
+  // Loading state when a specific tenant storefront was requested
+  if (requestedTenant && storefrontQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="h-10 w-10 rounded-xs border border-[#C5A059]/40 bg-[#1B1B1B] p-1 flex items-center justify-center animate-pulse">
+          <Sparkles className="h-5 w-5 text-[#C5A059]" />
+        </div>
+        <p className="text-xs font-serif uppercase tracking-[0.2em] text-[#C5A059]">Curating Fragrance Boutique...</p>
+      </div>
+    );
+  }
+
+  // Not Found State
+  if (requestedTenant && storefrontQuery.data?.status === "not_found") {
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+              <Store className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-serif text-white">Boutique Not Found</h2>
+            <p className="text-sm text-neutral-400">
+              The boutique storefront you are looking for does not exist or has been relocated.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/store/the-fragrance-store">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Suspended State
+  if (requestedTenant && storefrontQuery.data?.status === "suspended") {
+    const suspended = storefrontQuery.data.tenant;
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400">
+                {suspended.displayLabel}
+              </span>
+              <h2 className="text-xl font-serif text-white">{suspended.name}</h2>
+            </div>
+            <p className="text-sm text-neutral-400">
+              This boutique storefront is currently suspended or undergoing curation. No catalog items are publicly available at this time.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/store/the-fragrance-store">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   function addProductToCart(product: CatalogProduct, quantity: number) {
     if (quantity > (product.stock ?? 0)) {
@@ -297,24 +411,24 @@ function BuyerMarketplace() {
   if (isCategoriesOverview) {
     return (
       <div className="w-full min-h-screen bg-slate-50/50 flex flex-col justify-between overflow-x-hidden">
-        {/* Header: Home Link + Tex’s Chicken & Burgers Logo & Name + Profile + Cart */}
+        {/* Header: Home Link + Store Logo & Name + Profile + Cart */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-2.5 py-2 sm:px-4 sm:py-2.5 shadow-xs">
           <div className="flex items-center justify-between gap-2 max-w-[1500px] mx-auto">
-            <Link to="/store/the-fragrance-store" className="flex items-center gap-2 group">
+            <Link to={storefrontPath} className="flex items-center gap-2 group">
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 group-hover:bg-emerald-100 transition-colors">
                 <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
               <img
-                src="/fragrance/brand-mark.svg"
-                alt="The Fragrance Store"
+                src={tenant?.logo || "/fragrance/brand-mark.svg"}
+                alt={tenant?.name || "The Fragrance Store"}
                 className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-[#C5A059]/40 bg-[#111111] p-0.5 shadow-xs"
               />
               <div>
                 <h1 className="text-xs sm:text-base font-serif font-bold tracking-wider text-slate-900 leading-tight uppercase">
-                  The Fragrance Store
+                  {tenant?.name || "The Fragrance Store"}
                 </h1>
                 <p className="text-[9px] sm:text-xs text-[#9E7B35] font-semibold tracking-wider uppercase leading-none mt-0.5">
-                  House of Brands
+                  {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : (tenant?.description || "House of Brands")}
                 </p>
               </div>
             </Link>
@@ -322,29 +436,25 @@ function BuyerMarketplace() {
             {/* Desktop Navigation Menu (Home, Shop, Categories, Cart, Account) */}
             <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm tracking-wider uppercase font-sans">
               <Link
-                to="/store/the-fragrance-store"
+                to={storefrontPath}
                 className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
               >
                 Home
               </Link>
               <Link
-                to="/products"
+                to={`${storefrontPath}/products`}
                 className="text-[#C5A059] font-bold transition-colors py-1"
               >
                 Shop
               </Link>
               <Link
-                to="/products"
-                onClick={() => {
-                  setSearchParams({});
-                  setSearch("");
-                }}
+                to={`${storefrontPath}/about`}
                 className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
               >
-                Categories
+                About
               </Link>
               <Link
-                to="/cart"
+                to={`${storefrontPath}/cart`}
                 className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1.5"
               >
                 <span>Cart</span>
@@ -373,7 +483,7 @@ function BuyerMarketplace() {
                 <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
               </Link>
               <Link
-                to="/cart"
+                to={`${storefrontPath}/cart`}
                 id="header-cart-button"
                 aria-label="View shopping cart"
                 className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
@@ -467,7 +577,7 @@ function BuyerMarketplace() {
         </main>
 
         {/* Mobile Bottom Navigation - Categories is ACTIVE GREEN */}
-        <CustomerBottomNav active="categories" />
+        <CustomerBottomNav active="categories" storefrontPath={storefrontPath} />
       </div>
     );
   }
@@ -477,7 +587,7 @@ function BuyerMarketplace() {
   // ─────────────────────────────────────────────────────────────
   return (
     <div className="w-full min-h-screen bg-slate-50/50 flex flex-col justify-between overflow-x-hidden">
-      {/* Header: Back to Categories + Tex’s Chicken & Burgers + Profile + Cart */}
+      {/* Header: Back to Categories + Store Logo & Name + Profile + Cart */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-2.5 py-2 sm:px-4 sm:py-2.5 shadow-xs">
         <div className="flex items-center justify-between gap-2 max-w-[1500px] mx-auto">
           <button
@@ -487,22 +597,22 @@ function BuyerMarketplace() {
               setSearch("");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="flex items-center gap-2 group text-left"
+            className="flex items-center gap-2 group text-left cursor-pointer"
           >
             <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 group-hover:bg-emerald-100 transition-colors">
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
             <img
-              src="/fragrance/brand-mark.svg"
-              alt="The Fragrance Store"
+              src={tenant?.logo || "/fragrance/brand-mark.svg"}
+              alt={tenant?.name || "The Fragrance Store"}
               className="h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-md border border-[#C5A059]/40 bg-[#111111] p-0.5 shadow-xs"
             />
             <div>
               <h1 className="text-xs sm:text-base font-serif font-bold tracking-wider text-slate-900 leading-tight uppercase">
-                The Fragrance Store
+                {tenant?.name || "The Fragrance Store"}
               </h1>
               <p className="text-[9px] sm:text-xs text-[#9E7B35] font-semibold tracking-wider uppercase leading-none mt-0.5">
-                House of Brands
+                {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : (tenant?.description || "House of Brands")}
               </p>
             </div>
           </button>
@@ -510,13 +620,13 @@ function BuyerMarketplace() {
             {/* Desktop Navigation Menu (Home, Shop, Categories, Cart, Account) */}
             <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm tracking-wider uppercase font-sans">
               <Link
-                to="/store/the-fragrance-store"
+                to={storefrontPath}
                 className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
               >
                 Home
               </Link>
               <Link
-                to="/products"
+                to={`${storefrontPath}/products`}
                 className="text-[#C5A059] font-bold transition-colors py-1"
               >
                 Shop
@@ -528,12 +638,18 @@ function BuyerMarketplace() {
                   setSearch("");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 uppercase"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 uppercase cursor-pointer"
               >
                 Categories
               </button>
               <Link
-                to="/cart"
+                to={`${storefrontPath}/about`}
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1"
+              >
+                About
+              </Link>
+              <Link
+                to={`${storefrontPath}/cart`}
                 className="text-slate-600 hover:text-slate-900 font-medium transition-colors py-1 flex items-center gap-1.5"
               >
                 <span>Cart</span>
@@ -562,7 +678,7 @@ function BuyerMarketplace() {
                 <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
               </Link>
               <Link
-                to="/cart"
+                to={`${storefrontPath}/cart`}
                 id="header-cart-button"
                 aria-label="View shopping cart"
                 className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200/80 transition-colors"
@@ -605,37 +721,37 @@ function BuyerMarketplace() {
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>All Categories</span>
           </button>
-          <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80 text-[10px] sm:text-xs">
-            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-            100% Certified Halal
+          <span className="inline-flex items-center gap-1 font-semibold text-[#9E7B35] bg-[#C5A059]/10 px-2.5 py-0.5 rounded-full border border-[#C5A059]/30 text-[10px] sm:text-xs">
+            <Sparkles className="h-3 w-3 text-[#C5A059]" />
+            {isWebsiteA ? "100% Authentic Guaranteed" : "Curated Selection"}
           </span>
         </div>
 
         {/* Category Title & Horizontal Scrolling Tabs */}
         <div className="space-y-1.5 sm:space-y-2">
           <div className="space-y-0.5">
-            <h2 className="text-xs sm:text-base font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
-              <span>{isAllSelected ? "🍽️" : activeCategory ? activeCategory.emoji : (search.trim() ? "🔍" : "🍽️")}</span>
+            <h2 className="text-xs sm:text-base font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+              <span>{isAllSelected ? "✨" : activeCategory ? activeCategory.emoji : (search.trim() ? "🔍" : "✨")}</span>
               <span>
                 {isAllSelected
-                  ? "All Products"
+                  ? "All Fragrances"
                   : activeCategory
                     ? activeCategory.name
                     : (search.trim()
                       ? "Search Results"
-                      : (categoriesQuery.isLoading ? "Loading Category..." : "Halal Food Menu"))}
+                      : (categoriesQuery.isLoading ? "Loading Category..." : (tenant?.name ? `${tenant.name} Catalog` : "Fragrance Catalog")))}
               </span>
             </h2>
             <p className="text-[10px] sm:text-xs text-slate-500 leading-tight">
               {isAllSelected
-                ? "Showing all halal menu items"
+                ? "Showing all fine fragrances & flacons"
                 : activeCategory
                   ? activeCategory.description
                   : (search.trim()
                     ? `Showing results for "${search}"`
                     : (categoriesQuery.isLoading
                       ? "Fetching category items..."
-                      : "Browse all certified halal dishes"))}
+                      : (tenant?.name ? `Browse catalog from ${tenant.name}` : "Discover your signature scent")))}
             </p>
           </div>
 
@@ -731,22 +847,22 @@ function BuyerMarketplace() {
                   </SelectContent>
                 </Select>
               </div>
-              <FilterCheck label="100% Certified Halal" checked />
-              <FilterCheck label="Platters Over Rice" />
-              <FilterCheck label="Pita Gyros & Wraps" />
-              <FilterCheck label="Wings & Sides" />
+              <FilterCheck label={isWebsiteA ? "100% Authentic Guaranteed" : "Curated Selection"} checked />
+              <FilterCheck label={isWebsiteA ? "Eau de Parfum & Extraits" : "Platters & Combos"} />
+              <FilterCheck label={isWebsiteA ? "Rare Woods & Ouds" : "Signature Specials"} />
+              <FilterCheck label={isWebsiteA ? "Discovery Sets" : "Sides & Add-ons"} />
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-slate-700">Price Range</Label>
-                <div className="rounded-md border p-2.5 text-xs text-muted-foreground">$1.00 ───── $30.00</div>
+                <div className="rounded-md border p-2.5 text-xs text-muted-foreground">$20.00 ───── $500.00</div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-700">Restaurant</Label>
+                <Label className="text-xs font-semibold text-slate-700">{isWebsiteA ? "Boutique" : "Store / Brand"}</Label>
                 <Select defaultValue="all">
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="all">Tex’s Chicken & Burgers</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="all">{tenant?.name || "The Fragrance Store"}</SelectItem></SelectContent>
                 </Select>
               </div>
-              <FilterCheck label="Available to Order" checked />
+              <FilterCheck label="In Stock & Ready to Dispatch" checked />
               <Button
                 variant="outline"
                 className="w-full text-xs font-medium cursor-pointer"
@@ -792,6 +908,7 @@ function BuyerMarketplace() {
                   <ProductCard
                     key={product.id}
                     product={product}
+                    storefrontPath={storefrontPath}
                     onAdd={(quantity) => addProductToCart(product, quantity)}
                     pending={addToCart.isPending}
                   />
@@ -848,7 +965,7 @@ function BuyerMarketplace() {
         </div>
       </div>
 
-      <CustomerBottomNav active="categories" />
+      <CustomerBottomNav active="shop" storefrontPath={storefrontPath} />
     </div>
   );
 }
@@ -858,14 +975,16 @@ export function productRequiresOptions(product: { options?: unknown }): boolean 
 }
 
 {/* ====================================================================== */}
-{/* RESTAURANT PRODUCT CARD COMPONENT                                       */}
+{/* PRODUCT CARD COMPONENT                                                 */}
 {/* ====================================================================== */}
 export function ProductCard({
   product,
+  storefrontPath,
   onAdd,
   pending,
 }: {
   product: CatalogProduct;
+  storefrontPath?: string;
   onAdd: (quantity: number) => void;
   pending?: boolean;
 }) {
@@ -888,6 +1007,7 @@ export function ProductCard({
     return options.find((o) => o.image && o.image.trim())?.image?.trim() || null;
   }, [hasOptions, options]);
   const displayImage = firstVariantImage || product.image;
+  const targetProductPath = `${storefrontPath || ""}/products/${product.slug}`;
 
   return (
     <Card
@@ -895,9 +1015,9 @@ export function ProductCard({
       className="group overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between p-0 py-0 gap-0"
     >
       <div className="flex flex-col flex-1">
-        {/* 1. Food Image - Compact on mobile (~35-40% of card) */}
+        {/* 1. Product Image - Compact on mobile */}
         <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-slate-100 overflow-hidden shrink-0">
-          <Link to={`/products/${product.slug}`} className="block h-full w-full">
+          <Link to={targetProductPath} className="block h-full w-full">
             {displayImage && !imageFailed ? (
               <img
                 src={resolveProductImageUrl(displayImage)}
@@ -926,7 +1046,7 @@ export function ProductCard({
           {/* 3. Product Name */}
           <Link
             id={`product-name-${product.id}`}
-            to={`/products/${product.slug}`}
+            to={targetProductPath}
             className="font-bold text-[11px] xs:text-xs sm:text-sm text-slate-900 leading-tight line-clamp-2 hover:text-emerald-700 transition-colors break-words min-h-[26px] xs:min-h-[28px] sm:min-h-[36px]"
           >
             {product.name}
@@ -934,7 +1054,7 @@ export function ProductCard({
 
           {/* 4. What Comes With It / Shop Name */}
           <p className="text-[9px] xs:text-[10px] sm:text-xs font-normal text-slate-500 leading-none truncate">
-            {itemSubtitle || (product.supplierName ?? "Tex’s Chicken & Burgers")}
+            {itemSubtitle || (product.supplierName ?? "The Fragrance Store")}
           </p>
 
           {/* 5. Selling price + original price */}

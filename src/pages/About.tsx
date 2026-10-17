@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import {
   Sparkles,
   ArrowRight,
@@ -7,57 +7,138 @@ import {
   ShieldCheck,
   Feather,
   Layers,
+  Store,
+  AlertTriangle,
 } from "lucide-react";
+import { trpc } from "@/providers/trpc";
 import { Button } from "@/components/ui/button";
 import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 
 export default function About() {
+  const params = useParams<{ tenantSlug?: string }>();
+  const storefrontQuery = trpc.company.storefront.useQuery(
+    { slug: params.tenantSlug },
+    { enabled: !!params.tenantSlug, retry: false }
+  );
+  const tenant = storefrontQuery.data?.status === "active" ? storefrontQuery.data.tenant : null;
+  const storefrontPath = params.tenantSlug ? `/store/${params.tenantSlug}` : "/store/the-fragrance-store";
+
+  // Boutique Not Found
+  if (params.tenantSlug && storefrontQuery.data?.status === "not_found") {
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+              <Store className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-serif text-white">Boutique Not Found</h2>
+            <p className="text-sm text-neutral-400">
+              The boutique storefront you are looking for does not exist or has been relocated.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/store/the-fragrance-store">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Boutique Suspended
+  if (params.tenantSlug && storefrontQuery.data?.status === "suspended") {
+    const suspended = storefrontQuery.data.tenant;
+    return (
+      <div className="min-h-screen bg-[#111111] text-[#FDFBF7] flex flex-col">
+        <header className="border-b border-[#262421] px-6 py-4 flex items-center justify-between">
+          <Link to="/store/the-fragrance-store" className="flex items-center gap-2">
+            <img src="/fragrance/brand-mark.svg" alt="The Fragrance Store" className="h-6 w-6" />
+            <span className="font-serif text-sm uppercase tracking-widest text-white">The Fragrance Store</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#1A1A1A] border border-[#262421] p-8 rounded-lg text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400">
+                {suspended.displayLabel}
+              </span>
+              <h2 className="text-xl font-serif text-white">{suspended.name}</h2>
+            </div>
+            <p className="text-sm text-neutral-400">
+              This boutique storefront is currently suspended or undergoing curation.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/store/the-fragrance-store">
+                <Button className="w-full bg-[#C5A059] hover:bg-[#D4AF37] text-black font-semibold text-xs tracking-wider uppercase">
+                  Return to Main Storefront
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#111111] flex flex-col font-sans selection:bg-[#C5A059] selection:text-[#111111]">
       {/* Editorial Announcement Bar */}
       <div className="bg-[#111111] text-[#E0C895] text-[11px] sm:text-xs tracking-[0.2em] uppercase py-2 px-4 text-center border-b border-[#262421] font-medium">
-        The Fragrance Store — House of Brands
+        {tenant?.name || "The Fragrance Store"} — {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : "House of Brands"}
       </div>
 
       {/* Main Luxury Header */}
       <header className="sticky top-0 z-40 bg-[#111111]/95 backdrop-blur-md border-b border-[#262421] text-[#FDFBF7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
           <Link
-            to="/store/the-fragrance-store"
+            to={storefrontPath}
             className="flex items-center gap-3 group shrink-0 whitespace-nowrap"
-            aria-label="The Fragrance Store - House of Brands"
+            aria-label={tenant?.name || "The Fragrance Store - House of Brands"}
           >
             <div className="h-10 w-10 rounded-lg overflow-hidden border border-[#C5A059]/40 bg-[#1B1B1B] p-0.5 shadow-sm group-hover:border-[#C5A059] transition-colors">
               <img
-                src="/fragrance/brand-mark.svg"
-                alt="The Fragrance Store Monogram"
+                src={tenant?.logo || "/fragrance/brand-mark.svg"}
+                alt={tenant?.name || "The Fragrance Store Monogram"}
                 className="h-full w-full object-contain"
               />
             </div>
             <div className="flex flex-col">
               <span className="font-serif text-lg sm:text-xl font-bold tracking-[0.18em] uppercase text-[#FDFBF7] group-hover:text-[#E0C895] transition-colors leading-none">
-                The Fragrance Store
+                {tenant?.name || "The Fragrance Store"}
               </span>
               <span className="text-[9.5px] sm:text-[10px] tracking-[0.3em] font-sans text-[#C5A059] uppercase mt-1 leading-none">
-                House of Brands
+                {tenant?.displayLabel ? `${tenant.displayLabel} • House of Brands` : "House of Brands"}
               </span>
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[13px] tracking-wider uppercase font-medium text-[#C4BEB3]">
-            <Link to="/store/the-fragrance-store" className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
+            <Link to={storefrontPath} className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
               Home
             </Link>
-            <Link to="/products" className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
+            <Link to={`${storefrontPath}/products`} className="hover:text-[#FDFBF7] transition-colors whitespace-nowrap">
               Fragrances
             </Link>
-            <Link to="/about" className="text-[#C5A059] transition-colors whitespace-nowrap">
+            <Link to={`${storefrontPath}/about`} className="text-[#C5A059] transition-colors whitespace-nowrap">
               About House
             </Link>
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link to="/products">
+            <Link to={`${storefrontPath}/products`}>
               <Button
                 size="sm"
                 className="h-9 px-4 bg-[#C5A059] hover:bg-[#D9BC7D] text-[#111111] text-xs font-semibold tracking-wider uppercase rounded-none"
@@ -85,7 +166,7 @@ export default function About() {
             </h1>
 
             <p className="text-base sm:text-lg text-[#C4BEB3] max-w-2xl mx-auto font-light leading-relaxed">
-              The Fragrance Store is a sanctuary for perfume enthusiasts, connoisseurs, and anyone seeking a personal olfactory signature. We curate distinguished flacons from esteemed perfume houses and independent master artisans.
+              {tenant?.name || "The Fragrance Store"} is a sanctuary for perfume enthusiasts, connoisseurs, and anyone seeking a personal olfactory signature. We curate distinguished flacons from esteemed perfume houses and independent master artisans.
             </p>
 
             <div className="pt-4 flex items-center justify-center gap-4 text-xs tracking-widest uppercase text-[#9E978C]">
@@ -127,7 +208,7 @@ export default function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/70 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-4 left-4 right-4 text-center">
                 <span className="text-[11px] tracking-[0.25em] uppercase text-[#C5A059] block font-semibold">
-                  House of Brands
+                  {tenant?.name || "The Fragrance Store"}
                 </span>
                 <span className="font-serif text-sm text-[#FDFBF7]">
                   Curated Fine Fragrances &amp; Flacons
@@ -279,14 +360,14 @@ export default function About() {
               Explore our portfolio of fragrances, or browse our proposed collections to experience the artistry of fine scent.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
-              <Link to="/store/the-fragrance-store">
+              <Link to={storefrontPath}>
                 <Button
                   className="h-12 px-8 bg-[#C5A059] hover:bg-[#D9BC7D] text-[#111111] text-xs font-semibold tracking-widest uppercase rounded-none"
                 >
                   Return to Home
                 </Button>
               </Link>
-              <Link to="/products">
+              <Link to={`${storefrontPath}/products`}>
                 <Button
                   variant="outline"
                   className="h-12 px-8 border border-[#443E36] bg-transparent text-[#FDFBF7] hover:bg-[#1B1B1B] text-xs font-semibold tracking-widest uppercase rounded-none"
@@ -301,7 +382,7 @@ export default function About() {
       </main>
 
       {/* Persistent Customer Bottom Nav */}
-      <CustomerBottomNav active="about" />
+      <CustomerBottomNav active="about" storefrontPath={storefrontPath} />
     </div>
   );
 }

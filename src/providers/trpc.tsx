@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 export const trpc = createTRPCReact<AppRouter>();
 
 const ADMIN_TOKEN_KEY = "shop_admin_token";
+const CUSTOMER_TOKEN_KEY = "shop_customer_token";
 
 export function getStoredAdminToken(): string | null {
   try {
@@ -31,6 +32,28 @@ export function setStoredAdminToken(token: string | null) {
   }
 }
 
+export function getStoredCustomerToken(): string | null {
+  try {
+    return localStorage.getItem(CUSTOMER_TOKEN_KEY) || sessionStorage.getItem(CUSTOMER_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredCustomerToken(token: string | null) {
+  try {
+    if (token) {
+      localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+      sessionStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+      sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    }
+  } catch {
+    // Ignore storage restrictions if in private mode
+  }
+}
+
 const queryClient = new QueryClient();
 const trpcClient = trpc.createClient({
   links: [
@@ -38,7 +61,7 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       headers() {
-        const token = getStoredAdminToken();
+        const token = getStoredAdminToken() || getStoredCustomerToken();
         return token ? { authorization: `Bearer ${token}` } : {};
       },
       fetch(input, init) {
